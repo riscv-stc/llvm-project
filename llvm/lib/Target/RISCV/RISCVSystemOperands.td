@@ -388,3 +388,11 @@ def : SysReg<"vxrm", 0x00A>;
 def : SysReg<"vl", 0xC20>;
 def : SysReg<"vtype", 0xC21>;
 def : SysReg<"vlenb", 0xC22>;
+
+//===-----------------------------------------------
+// User Matrix CSRs
+//===-----------------------------------------------
+def : SysReg<"mtype", 0xC43>;
+def : SysReg<"tile_m", 0xC40>;
+def : SysReg<"tile_k", 0xC42>;
+def : SysReg<"tile_n", 0xC41>;

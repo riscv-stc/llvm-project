@@ -313,6 +313,17 @@ public:
     }
     return false;
   }
+  bool isUImm13() {
+    if (!isImm())
+      return false;
+
+    // Constant case
+    if (const auto *ConstExpr = dyn_cast<MCConstantExpr>(Imm.Val)) {
+      int64_t Value = ConstExpr->getValue();
+      return isUInt<13>(Value);
+    }
+    return false;
+  }
   bool isSImm7() {
     if (!isImm())
       return false;

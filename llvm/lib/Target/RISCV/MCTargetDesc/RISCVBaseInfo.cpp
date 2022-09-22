@@ -121,6 +121,26 @@ unsigned RISCVVType::encodeVTYPE(RISCVII::VLMUL VLMUL, unsigned SEW,
   return VTypeI;
 }
 
+// Encode MTYPE into the binary format used by the the MSETTYPE instruction which
+// is used by our MC layer representation.
+//
+// Bits | Name       | Description
+// -----+------------+------------------------------------------------
+// 2:0  | msew[2:0]  | Standard element width (SEW) setting
+unsigned RISCVVType::encodeMTYPE(unsigned SEW, bool mltr, bool mrtr, bool maccq) {
+  assert(isValidSEW(SEW) && "Invalid SEW");
+  unsigned MSEWBits = Log2_32(SEW) - 3;
+  unsigned MTypeI = (MSEWBits & 0x7);
+  if (mltr)
+    MTypeI |= (1 << 4);
+  if (mrtr)
+    MTypeI |= (1 << 3);
+  if (maccq)
+    MTypeI |= (1 << 30);
+
+  return MTypeI;
+}
+
 std::pair<unsigned, bool> RISCVVType::decodeVLMUL(RISCVII::VLMUL VLMUL) {
   switch (VLMUL) {
   default:
@@ -160,6 +180,11 @@ void RISCVVType::printVType(unsigned VType, raw_ostream &OS) {
     OS << ", ma";
   else
     OS << ", mu";
+}
+
+void RISCVVType::printMType(unsigned MType, raw_ostream &OS) {
+  unsigned Sew = getMSEW(MType);
+  OS << "e" << Sew;
 }
 
 } // namespace llvm

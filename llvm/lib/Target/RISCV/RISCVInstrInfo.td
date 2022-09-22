@@ -181,6 +181,13 @@ def uimm7 : Operand<XLenVT> {
   let OperandNamespace = "RISCVOp";
 }
 
+def uimm13 : Operand<XLenVT> {
+  let ParserMatchClass = UImmAsmOperand<13>;
+  let DecoderMethod = "decodeUImmOperand<13>";
+  let OperandType = "OPERAND_UIMM13";
+  let OperandNamespace = "RISCVOp";
+}
+
 def simm12 : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isInt<12>(Imm);}]> {
   let ParserMatchClass = SImmAsmOperand<12>;
   let EncoderMethod = "getImmOpValue";
