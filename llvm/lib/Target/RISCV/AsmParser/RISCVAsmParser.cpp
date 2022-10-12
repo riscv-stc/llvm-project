@@ -1708,10 +1708,10 @@ OperandMatchResultTy RISCVAsmParser::parseMTypeI(OperandVector &Operands) {
     getLexer().Lex();
   }
 
-  if (MTypeIElements.size() == 7) {
+  if (MTypeIElements.size() == 3 || MTypeIElements.size() == 1) {
     // The MTypeIElements layout is:
-    // SEW comma mltr comma mrtr comma maccq
-    //  0    1    2     3    4   5    6
+    // SEW comma maccq
+    //  0    1    2    
     StringRef Name = MTypeIElements[0].getIdentifier();
     if (!Name.consume_front("e"))
       goto MatchFail;
@@ -1721,36 +1721,20 @@ OperandMatchResultTy RISCVAsmParser::parseMTypeI(OperandVector &Operands) {
     if (!RISCVVType::isValidSEW(Sew))
       goto MatchFail;
 
-    Name = MTypeIElements[2].getIdentifier();
-    bool MatrixLeftTransform;
-    if (Name == "true")
-      MatrixLeftTransform = true;
-    else if (Name == "false")
-      MatrixLeftTransform = false;
-    else
-      goto MatchFail;
-
-    Name = MTypeIElements[4].getIdentifier();
-    bool MatrixRightTransform;
-    if (Name == "true")
-      MatrixRightTransform = true;
-    else if (Name == "false")
-      MatrixRightTransform = false;
-    else
-      goto MatchFail;
-
-    Name = MTypeIElements[6].getIdentifier();
-    bool MatrixAccQ;
-    if (Name == "maccq")
-      MatrixAccQ = true;
-    else if (Name == "maccd")
-      MatrixAccQ = false;
-    else
-      goto MatchFail;
+    bool MatrixAccQ = false; 
+    if (MTypeIElements.size() == 3) {
+      Name = MTypeIElements[2].getIdentifier();
+      if (Name == "maccq")
+        MatrixAccQ = true;
+      else if (Name == "maccd")
+        MatrixAccQ = false;
+      else
+        goto MatchFail;
+    }
 
 
     unsigned MTypeI =
-        RISCVVType::encodeMTYPE(Sew, MatrixLeftTransform, MatrixRightTransform, MatrixAccQ);
+        RISCVVType::encodeMTYPE(Sew, MatrixAccQ);
     Operands.push_back(RISCVOperand::createMType(MTypeI, S, isRV64()));
     return MatchOperand_Success;
   }

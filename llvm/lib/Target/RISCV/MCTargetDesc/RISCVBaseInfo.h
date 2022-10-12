@@ -343,7 +343,7 @@ inline static bool isValidLMUL(unsigned LMUL, bool Fractional) {
 unsigned encodeVTYPE(RISCVII::VLMUL VLMUL, unsigned SEW, bool TailAgnostic,
                      bool MaskAgnostic);
 
-unsigned encodeMTYPE(unsigned SEW, bool mltr, bool mrtr, bool maccq);
+unsigned encodeMTYPE(unsigned SEW, bool maccq);
 
 inline static RISCVII::VLMUL getVLMUL(unsigned VType) {
   unsigned VLMUL = VType & 0x7;
