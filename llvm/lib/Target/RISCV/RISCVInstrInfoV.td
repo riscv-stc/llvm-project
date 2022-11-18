@@ -909,6 +909,13 @@ def MSETTILENI : RVInstSetTilei<0b0110, (outs GPR:$rd), (ins uimm13:$mleni),
 def MSETTSIDXI : RVInstSetTilei<0b1000, (outs GPR:$rd), (ins uimm13:$mleni),
                          "msettsidxi", "$rd, $mleni">;
 
+def MSETSK     : RVInstSetIm2col<0b1010, (outs GPR:$rd), (ins GPR:$rs1, GPR:$rs2),
+                         "msetsk", "$rd, $rs1, $rs2">;
+def MSETOUTSH  : RVInstSetIm2col<0b1000, (outs GPR:$rd), (ins GPR:$rs1, GPR:$rs2),
+                         "msetoutsh", "$rd, $rs1, $rs2">;
+def MSETINSH   : RVInstSetIm2col<0b1001, (outs GPR:$rd), (ins GPR:$rs1, GPR:$rs2),
+                         "msetinsh", "$rd, $rs1, $rs2">;
+
 } // hasSideEffects = 1, mayLoad = 0, mayStore = 0
 
 
@@ -1034,6 +1041,23 @@ def MSCTE16_M      : MatrixACCStore<0x4,  0x1, "mscte16.m">, VLSSched<8>;
 def MSCTE32_M      : MatrixACCStore<0x4,  0x2, "mscte32.m">, VLSSched<8>;
 def MSCTE64_M      : MatrixACCStore<0x4,  0x3, "mscte64.m">, VLSSched<8>;
 
+def MLUFAE8_M      : MatrixTRLoad<0x30,   0x0, "mlufae8.m">,   VLSSched<8>;
+def MLUFAE16_M     : MatrixTRLoad<0x30,   0x1, "mlufae16.m">,  VLSSched<8>;
+def MLUFAE32_M     : MatrixTRLoad<0x30,   0x2, "mlufae32.m">,  VLSSched<8>;
+def MLUFAE64_M     : MatrixTRLoad<0x30,   0x3, "mlufae64.m">,  VLSSched<8>;
+def MLUFBE8_M      : MatrixTRLoad<0x31,   0x0, "mlufbe8.m">,   VLSSched<8>;
+def MLUFBE16_M     : MatrixTRLoad<0x31,   0x1, "mlufbe16.m">,  VLSSched<8>;
+def MLUFBE32_M     : MatrixTRLoad<0x31,   0x2, "mlufbe32.m">,  VLSSched<8>;
+def MLUFBE64_M     : MatrixTRLoad<0x31,   0x3, "mlufbe64.m">,  VLSSched<8>;
+
+def MSUFAE8_M      : MatrixTRStore<0x30,   0x0, "msufae8.m">,   VLSSched<8>;
+def MSUFAE16_M     : MatrixTRStore<0x30,   0x1, "msufae16.m">,  VLSSched<8>;
+def MSUFAE32_M     : MatrixTRStore<0x30,   0x2, "msufae32.m">,  VLSSched<8>;
+def MSUFAE64_M     : MatrixTRStore<0x30,   0x3, "msufae64.m">,  VLSSched<8>;
+def MSUFBE8_M      : MatrixTRStore<0x31,   0x0, "msufbe8.m">,   VLSSched<8>;
+def MSUFBE16_M     : MatrixTRStore<0x31,   0x1, "msufbe16.m">,  VLSSched<8>;
+def MSUFBE32_M     : MatrixTRStore<0x31,   0x2, "msufbe32.m">,  VLSSched<8>;
+def MSUFBE64_M     : MatrixTRStore<0x31,   0x3, "msufbe64.m">,  VLSSched<8>;
 
 defm VL1R : VWholeLoad1<"vl1r", VR>;
 defm VL2R : VWholeLoad2<"vl2r", VRM2>;

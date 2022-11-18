@@ -474,7 +474,13 @@ let RegAltNameIndices = [ABIRegAltName] in {
   def TILEM  : RISCVReg<0, "tilem", ["tilem"]>;
   def TILEN  : RISCVReg<0, "tilen", ["tilen"]>;
   def TILEK  : RISCVReg<0, "tilek", ["tilek"]>;
-  def TSIDX  : RISCVReg<0, "tsidx", ["tsidx"]>;
+
+  def MOUTSH : RISCVReg<0, "moutsh", ["mkrsh"]>;
+  def MINSH  : RISCVReg<0, "minsh",  ["mfdsh"]>;
+  def MPAD   : RISCVReg<0, "mpad",   ["mpad"]>;
+  def MSTDI  : RISCVReg<0, "mstdi",  ["mstdi"]>;
+  def MINSK  : RISCVReg<0, "minsk",  ["minsk"]>;
+  def MOUTSK : RISCVReg<0, "moutsk", ["moutsk"]>;
 }
 
 foreach m = [1, 2, 4] in {

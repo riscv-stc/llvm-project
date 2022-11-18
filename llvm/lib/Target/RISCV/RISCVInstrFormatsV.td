@@ -175,23 +175,21 @@ class RVInstSetConvi<bits<2> mit, dag outs, dag ins, string opcodestr, string ar
   let Defs = [TILEM];
 }
 
-class RVInstSetConv<bits<2> mit, dag outs, dag ins, string opcodestr, string argstr>
+class RVInstSetIm2col<bits<4> mit, dag outs, dag ins, string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
-  bits<5> rd;
   bits<5> rs1;
   bits<5> rs2;
+  bits<5> rd;
 
-  let Inst{31} = 1;
-  let Inst{30-29} = mit;
-  let Inst{28} = 1;
-  let Inst{27-25} = 0b000;
+  let Inst{31-28} = mit;
+  let Inst{27-25} = 0;
   let Inst{24-20} = rs2;
   let Inst{19-15} = rs1;
   let Inst{14-12} = 0b111;
   let Inst{11-7} = rd;
   let Opcode = OPC_OP_M.Value;
 
-  let Defs = [TILEM];
+  let Defs = [MINSH];
 }
 
 
