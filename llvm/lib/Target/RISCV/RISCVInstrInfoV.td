@@ -254,6 +254,11 @@ class MatrixTRLoad<bits<6> funct6, bits<3> width, string opcodestr>
                 (outs TRR:$td),
                 (ins GPR:$rs1, GPR:$rs2), opcodestr,
                 "$td, (${rs1}), $rs2">;
+class MatrixVectorLoad<bits<6> funct6, bits<3> width, string opcodestr>
+    : RVInstML<funct6, width,
+                (outs VR:$vd),
+                (ins GPR:$rs1, GPR:$rs2), opcodestr,
+                "$vd, (${rs1}), $rs2">;
 } // hasSideEffects = 0, mayLoad = 1, mayStore = 0
 
 let hasSideEffects = 0, mayLoad = 1, mayStore = 0 in {
@@ -273,6 +278,10 @@ class MatrixTRStore<bits<6> funct6, bits<3> width, string opcodestr>
     : RVInstMS<funct6, width, (outs),
                 (ins TRR:$ts3, GPR:$rs1, GPR:$rs2),
                 opcodestr, "$ts3, (${rs1}), $rs2">;
+class MatrixVectorStore<bits<6> funct6, bits<3> width, string opcodestr>
+    : RVInstMS<funct6, width, (outs),
+                (ins VR:$vs3, GPR:$rs1, GPR:$rs2),
+                opcodestr, "$vs3, (${rs1}), $rs2">;
 } // hasSideEffects = 0, mayLoad = 0, mayStore = 1
 
 let hasSideEffects = 0, mayLoad = 0, mayStore = 1 in {
@@ -1041,6 +1050,33 @@ def MSCTE16_M      : MatrixACCStore<0x4,  0x1, "mscte16.m">, VLSSched<8>;
 def MSCTE32_M      : MatrixACCStore<0x4,  0x2, "mscte32.m">, VLSSched<8>;
 def MSCTE64_M      : MatrixACCStore<0x4,  0x3, "mscte64.m">, VLSSched<8>;
 
+def MLAE8_V        : MatrixVectorLoad<0x20, 0x0, "mlae8.v">,  VLSSched<8>;
+def MLAE16_V       : MatrixVectorLoad<0x20, 0x1, "mlae16.v">, VLSSched<8>;
+def MLAE32_V       : MatrixVectorLoad<0x20, 0x2, "mlae32.v">, VLSSched<8>;
+def MLAE64_V       : MatrixVectorLoad<0x20, 0x3, "mlae64.v">, VLSSched<8>;
+def MLBE8_V        : MatrixVectorLoad<0x21, 0x0, "mlbe8.v">,  VLSSched<8>;
+def MLBE16_V       : MatrixVectorLoad<0x21, 0x1, "mlbe16.v">, VLSSched<8>;
+def MLBE32_V       : MatrixVectorLoad<0x21, 0x2, "mlbe32.v">, VLSSched<8>;
+def MLBE64_V       : MatrixVectorLoad<0x21, 0x3, "mlbe64.v">, VLSSched<8>;
+def MLCE8_V        : MatrixVectorLoad<0x22, 0x0, "mlce8.v">,  VLSSched<8>;
+def MLCE16_V       : MatrixVectorLoad<0x22, 0x1, "mlce16.v">, VLSSched<8>;
+def MLCE32_V       : MatrixVectorLoad<0x22, 0x2, "mlce32.v">, VLSSched<8>;
+def MLCE64_V       : MatrixVectorLoad<0x22, 0x3, "mlce64.v">, VLSSched<8>;
+
+def MSAE8_V        : MatrixVectorStore<0x20, 0x0, "msae8.v">,  VLSSched<8>;
+def MSAE16_V       : MatrixVectorStore<0x20, 0x1, "msae16.v">, VLSSched<8>;
+def MSAE32_V       : MatrixVectorStore<0x20, 0x2, "msae32.v">, VLSSched<8>;
+def MSAE64_V       : MatrixVectorStore<0x20, 0x3, "msae64.v">, VLSSched<8>;
+def MSBE8_V        : MatrixVectorStore<0x21, 0x0, "msbe8.v">,  VLSSched<8>;
+def MSBE16_V       : MatrixVectorStore<0x21, 0x1, "msbe16.v">, VLSSched<8>;
+def MSBE32_V       : MatrixVectorStore<0x21, 0x2, "msbe32.v">, VLSSched<8>;
+def MSBE64_V       : MatrixVectorStore<0x21, 0x3, "msbe64.v">, VLSSched<8>;
+def MSCE8_V        : MatrixVectorStore<0x22, 0x0, "msce8.v">,  VLSSched<8>;
+def MSCE16_V       : MatrixVectorStore<0x22, 0x1, "msce16.v">, VLSSched<8>;
+def MSCE32_V       : MatrixVectorStore<0x22, 0x2, "msce32.v">, VLSSched<8>;
+def MSCE64_V       : MatrixVectorStore<0x22, 0x3, "msce64.v">, VLSSched<8>;
+
+
 def MLUFAE8_M      : MatrixTRLoad<0x30,   0x0, "mlufae8.m">,   VLSSched<8>;
 def MLUFAE16_M     : MatrixTRLoad<0x30,   0x1, "mlufae16.m">,  VLSSched<8>;
 def MLUFAE32_M     : MatrixTRLoad<0x30,   0x2, "mlufae32.m">,  VLSSched<8>;
@@ -1112,6 +1148,36 @@ class MEMULMI<bits<6> funct6, string opcodestr>
                     (ins ACCR:$acc1, uimm5:$mimm5),
                     opcodestr, "$accd, $acc1, $mimm5">;
 
+class MEMULMV<bits<6> funct6, bit fp, string opcodestr>
+    : RVInstMEMULMV<funct6, fp, (outs ACCR:$accd),
+                    (ins ACCR:$acc1, VR:$vs2),
+                    opcodestr, "$accd, $acc1, $vs2">;
+
+class MMACCMV<bits<6> funct6, bit fp, string opcodestr>
+    : RVInstMMACCMV<funct6, fp, (outs ACCR:$accd),
+                    (ins VR:$vs1, VR:$vs2),
+                    opcodestr, "$accd, $vs1, $vs2">;
+              
+class MMOVETR2V<bits<6> funct6, string opcodestr>
+    : RVInstMOVE<funct6, 0, (outs VR:$vd),
+                    (ins TRR:$tr1, GPR:$rs2),
+                    opcodestr, "$vd, $tr1, $rs2">;
+
+class MMOVEV2TR<bits<6> funct6, string opcodestr>
+    : RVInstMOVE<funct6, 1, (outs TRR:$td),
+                    (ins VR:$vs1, GPR:$rs2),
+                    opcodestr, "$td, $vs1, $rs2">;
+
+class MMOVEACC2V<bits<6> funct6, string opcodestr>
+    : RVInstMOVE<funct6, 0, (outs VR:$vd),
+                    (ins ACCR:$acc1, GPR:$rs2),
+                    opcodestr, "$vd, $acc1, $rs2">;
+
+class MMOVEV2ACC<bits<6> funct6, string opcodestr>
+    : RVInstMOVE<funct6, 1, (outs ACCR:$accd),
+                    (ins VR:$vs1, GPR:$rs2),
+                    opcodestr, "$accd, $vs1, $rs2">;
+
 } // hasSideEffects = 0, mayLoad = 0, mayStore = 0
 
 def MMA_MM   : MALUMM<0b000000, 0, "mma.mm">;
@@ -1148,6 +1214,39 @@ def MEMULC_MI    : MEMULMI<0b010000, "memulc.mi">;
 def MWEMULC_MI   : MEMULMI<0b010001, "mwemulc.mi">;
 def MQEMULC_MI   : MEMULMI<0b010010, "mqemulc.mi">;
 
+def MEMULCR_MV   : MEMULMV<0b100001, 0, "memulcr.mv">;
+def MFEMULCR_MV  : MEMULMV<0b100001, 1, "mfemulcr.mv">;
+def MWEMULCR_MV  : MEMULMV<0b100010, 0, "mwemulcr.mv">;
+def MFWEMULCR_MV : MEMULMV<0b100010, 1, "mfwemulcr.mv">;
+def MQEMULCR_MV  : MEMULMV<0b100011, 0, "mqemulcr.mv">;
+def MEMULCC_MV   : MEMULMV<0b100100, 0, "memulcc.mv">;
+def MFEMULCC_MV  : MEMULMV<0b100100, 1, "mfemulcc.mv">;
+def MWEMULCC_MV  : MEMULMV<0b100101, 0, "mwemulcc.mv">;
+def MFWEMULCC_MV : MEMULMV<0b100101, 1, "mfwemulcc.mv">;
+def MQEMULCC_MV  : MEMULMV<0b100110, 0, "mqemulcc.mv">;
+
+def MADDCR_MV    : MEMULMV<0b100111, 0, "maddcr.mv">;
+def MFADDCR_MV   : MEMULMV<0b100111, 1, "mfaddcr.mv">;
+def MWADDCR_MV   : MEMULMV<0b101000, 0, "mwaddcr.mv">;
+def MFWADDCR_MV  : MEMULMV<0b101000, 1, "mfwaddcr.mv">;
+def MQADDCR_MV   : MEMULMV<0b101001, 0, "mqaddcr.mv">;
+def MADDCC_MV    : MEMULMV<0b101010, 0, "maddcc.mv">;
+def MFADDCC_MV   : MEMULMV<0b101010, 1, "mfaddcc.mv">;
+def MWADDCC_MV   : MEMULMV<0b101011, 0, "mwaddcc.mv">;
+def MFWADDCC_MV  : MEMULMV<0b101011, 1, "mfwaddcc.mv">;
+def MQADDCC_MV   : MEMULMV<0b101100, 0, "mqaddcc.mv">;
+
+def MMACCCR_MV   : MMACCMV<0b101101, 0, "mmacccr.mv">;
+def MFMACCCR_MV  : MMACCMV<0b101101, 1, "mfmacccr.mv">;
+def MWMACCCR_MV  : MMACCMV<0b101110, 0, "mwmacccr.mv">;
+def MFWMACCCR_MV : MMACCMV<0b101110, 1, "mfwmacccr.mv">;
+def MQMACCCR_MV  : MMACCMV<0b101111, 0, "mqmacccr.mv">;
+def MMACCCC_MV   : MMACCMV<0b110000, 0, "mmacccc.mv">;
+def MFMACCCC_MV  : MMACCMV<0b110000, 1, "mfmacccc.mv">;
+def MWMACCCC_MV  : MMACCMV<0b110001, 0, "mwmacccc.mv">;
+def MFWMACCCC_MV : MMACCMV<0b110001, 1, "mfwmacccc.mv">;
+def MQMACCCC_MV  : MMACCMV<0b110010, 0, "mqmacccc.mv">;
+ 
 def MFNCVTC_F_FW_M : MFCVT<0b011000, 1, "mfncvtc.f.fw.m">;
 def MFWCVTC_FW_F_M : MFCVT<0b011000, 0, "mfwcvtc.fw.f.m">;
 def MFCVTC_F_X_M   : MFCVT<0b011010, 1, "mfcvtc.f.x.m">;
@@ -1164,6 +1263,26 @@ def MFNCVTC_FW_XQ_M: MFCVT<0b011111, 1, "mfncvtc.fw.xq.m">;
 def MFWCVTC_XQ_FW_M: MFCVT<0b011111, 0, "mfwcvtc.xq.fw.m">;
 
 
+def MMVAR_V_M      : MMOVETR2V<0b000001,  "mmvar.v.m">;
+def MMVAR_M_V      : MMOVEV2TR<0b000001,  "mmvar.m.v">;
+def MMVBR_V_M      : MMOVETR2V<0b000010,  "mmvbr.v.m">;
+def MMVBR_M_V      : MMOVEV2TR<0b000010,  "mmvbr.m.v">;
+def MMVCR_V_M      : MMOVEACC2V<0b000011, "mmvcr.v.m">;
+def MMVCR_M_V      : MMOVEV2ACC<0b000011, "mmvcr.m.v">;
+def MMVAC_V_M      : MMOVETR2V<0b000101,  "mmvac.v.m">;
+def MMVAC_M_V      : MMOVEV2TR<0b000101,  "mmvac.m.v">;
+def MMVBC_V_M      : MMOVETR2V<0b000110,  "mmvbc.v.m">;
+def MMVBC_M_V      : MMOVEV2TR<0b000110,  "mmvbc.m.v">;
+def MMVCC_V_M      : MMOVEACC2V<0b000111, "mmvcc.v.m">;
+def MMVCC_M_V      : MMOVEV2ACC<0b000111, "mmvcc.m.v">;
+def MWMVCR_V_M     : MMOVEACC2V<0b010011, "mwmvcr.v.m">;
+def MWMVCR_M_V     : MMOVEV2ACC<0b010011, "mwmvcr.m.v">;
+def MWMVCC_V_M     : MMOVEACC2V<0b010111, "mwmvcc.v.m">;
+def MWMVCC_M_V     : MMOVEV2ACC<0b010111, "mwmvcc.m.v">;
+def MQMVCR_V_M     : MMOVEACC2V<0b100011, "mqmvcr.v.m">;
+def MQMVCR_M_V     : MMOVEV2ACC<0b100011, "mqmvcr.m.v">;
+def MQMVCC_V_M     : MMOVEACC2V<0b100111, "mqmvcc.v.m">;
+def MQMVCC_M_V     : MMOVEV2ACC<0b100111, "mqmvcc.m.v">;
 
 // Vector Single-Width Integer Add and Subtract
 defm VADD_V : VALU_IV_V_X_I<"vadd", 0b000000>;
