@@ -571,17 +571,71 @@ class RVInstMCLR<bits<6> funct6, bit fp, dag outs, dag ins,
   let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }
 
-class RVInstMOVE<bits<6> funct6, bit v2m, dag outs, dag ins,
+class RVInstMOVETR2V<bits<6> funct6, bit v2m, dag outs, dag ins,
+               string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> tr1;
+  bits<5> vd;
+  bits<5> rs2;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = v2m;
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = tr1;
+  let Inst{14-12} = 0b101;
+  let Inst{11-7} = vd;
+  let Opcode = OPC_OP_M.Value;
+
+  let Uses = [MTYPE, TILEM, TILEK, TILEN];
+}
+
+class RVInstMOVEV2TR<bits<6> funct6, bit v2m, dag outs, dag ins,
+               string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> vs1;
+  bits<5> td;
+  bits<5> rs2;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = v2m;
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = vs1;
+  let Inst{14-12} = 0b101;
+  let Inst{11-7} = td;
+  let Opcode = OPC_OP_M.Value;
+
+  let Uses = [MTYPE, TILEM, TILEK, TILEN];
+}
+
+class RVInstMOVEACC2V<bits<6> funct6, bit v2m, dag outs, dag ins,
                string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
   bits<5> acc1;
-  bits<5> accd;
+  bits<5> vd;
   bits<5> rs2;
 
   let Inst{31-26} = funct6;
   let Inst{25} = v2m;
   let Inst{24-20} = rs2;
   let Inst{19-15} = acc1;
+  let Inst{14-12} = 0b101;
+  let Inst{11-7} = vd;
+  let Opcode = OPC_OP_M.Value;
+
+  let Uses = [MTYPE, TILEM, TILEK, TILEN];
+}
+
+class RVInstMOVEv2ACC<bits<6> funct6, bit v2m, dag outs, dag ins,
+               string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> vs1;
+  bits<5> accd;
+  bits<5> rs2;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = v2m;
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = vs1;
   let Inst{14-12} = 0b101;
   let Inst{11-7} = accd;
   let Opcode = OPC_OP_M.Value;

@@ -1159,22 +1159,22 @@ class MMACCMV<bits<6> funct6, bit fp, string opcodestr>
                     opcodestr, "$accd, $vs1, $vs2">;
               
 class MMOVETR2V<bits<6> funct6, string opcodestr>
-    : RVInstMOVE<funct6, 0, (outs VR:$vd),
+    : RVInstMOVETR2V<funct6, 0, (outs VR:$vd),
                     (ins TRR:$tr1, GPR:$rs2),
                     opcodestr, "$vd, $tr1, $rs2">;
 
 class MMOVEV2TR<bits<6> funct6, string opcodestr>
-    : RVInstMOVE<funct6, 1, (outs TRR:$td),
+    : RVInstMOVEV2TR<funct6, 1, (outs TRR:$td),
                     (ins VR:$vs1, GPR:$rs2),
                     opcodestr, "$td, $vs1, $rs2">;
 
 class MMOVEACC2V<bits<6> funct6, string opcodestr>
-    : RVInstMOVE<funct6, 0, (outs VR:$vd),
+    : RVInstMOVEACC2V<funct6, 0, (outs VR:$vd),
                     (ins ACCR:$acc1, GPR:$rs2),
                     opcodestr, "$vd, $acc1, $rs2">;
 
 class MMOVEV2ACC<bits<6> funct6, string opcodestr>
-    : RVInstMOVE<funct6, 1, (outs ACCR:$accd),
+    : RVInstMOVEv2ACC<funct6, 1, (outs ACCR:$accd),
                     (ins VR:$vs1, GPR:$rs2),
                     opcodestr, "$accd, $vs1, $rs2">;
 
