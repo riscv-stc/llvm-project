@@ -460,7 +460,7 @@ let RegAltNameIndices = [ABIRegAltName] in {
     }
   }
   let RegAltNameIndices = [ABIRegAltName] in {
-    foreach Index = 0-1 in {
+    foreach Index = 0-15 in {
       def ACC#Index : RISCVReg<Index, "acc"#Index, ["acc"#Index]>, DwarfRegNum<[!add(Index, 96)]>;
     }
   }
@@ -474,7 +474,13 @@ let RegAltNameIndices = [ABIRegAltName] in {
   def TILEM  : RISCVReg<0, "tilem", ["tilem"]>;
   def TILEN  : RISCVReg<0, "tilen", ["tilen"]>;
   def TILEK  : RISCVReg<0, "tilek", ["tilek"]>;
-  def TSIDX  : RISCVReg<0, "tsidx", ["tsidx"]>;
+
+  def MOUTSH : RISCVReg<0, "moutsh", ["mkrsh"]>;
+  def MINSH  : RISCVReg<0, "minsh",  ["mfdsh"]>;
+  def MPAD   : RISCVReg<0, "mpad",   ["mpad"]>;
+  def MSTDI  : RISCVReg<0, "mstdi",  ["mstdi"]>;
+  def MINSK  : RISCVReg<0, "minsk",  ["minsk"]>;
+  def MOUTSK : RISCVReg<0, "moutsk", ["moutsk"]>;
 }
 
 foreach m = [1, 2, 4] in {
@@ -542,7 +548,7 @@ def ACCR : ACCReg<[vint8m1_t, vint16m1_t, vint32m1_t, vint64m1_t,
                vfloat16mf4_t, vfloat16mf2_t, vfloat32mf2_t,
                vbool64_t, vbool32_t, vbool16_t, vbool8_t, vbool4_t,
                vbool2_t, vbool1_t],
-           (add (sequence "ACC%u", 0, 1)), 1>;
+           (add (sequence "ACC%u", 0, 15)), 1>;
 
 def VRNoV0 : VReg<[vint8m1_t, vint16m1_t, vint32m1_t, vint64m1_t,
                    vfloat16m1_t, vfloat32m1_t, vfloat64m1_t,

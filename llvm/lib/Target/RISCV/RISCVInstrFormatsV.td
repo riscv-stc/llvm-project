@@ -175,23 +175,21 @@ class RVInstSetConvi<bits<2> mit, dag outs, dag ins, string opcodestr, string ar
   let Defs = [TILEM];
 }
 
-class RVInstSetConv<bits<2> mit, dag outs, dag ins, string opcodestr, string argstr>
+class RVInstSetIm2col<bits<4> mit, dag outs, dag ins, string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
-  bits<5> rd;
   bits<5> rs1;
   bits<5> rs2;
+  bits<5> rd;
 
-  let Inst{31} = 1;
-  let Inst{30-29} = mit;
-  let Inst{28} = 1;
-  let Inst{27-25} = 0b000;
+  let Inst{31-28} = mit;
+  let Inst{27-25} = 0;
   let Inst{24-20} = rs2;
   let Inst{19-15} = rs1;
   let Inst{14-12} = 0b111;
   let Inst{11-7} = rd;
   let Opcode = OPC_OP_M.Value;
 
-  let Defs = [TILEM];
+  let Defs = [MINSH];
 }
 
 
@@ -504,6 +502,42 @@ class RVInstMEMULMI<bits<6> funct6, dag outs, dag ins, string opcodestr, string 
   let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }
 
+class RVInstMEMULMV<bits<6> funct6, bit fp, dag outs, dag ins,
+               string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> acc1;
+  bits<5> accd;
+  bits<5> vs2;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = fp;
+  let Inst{24-20} = vs2;
+  let Inst{19-15} = acc1;
+  let Inst{14-12} = 0b110;
+  let Inst{11-7} = accd;
+  let Opcode = OPC_OP_M.Value;
+
+  let Uses = [MTYPE, TILEM, TILEK, TILEN];
+}
+
+class RVInstMMACCMV<bits<6> funct6, bit fp, dag outs, dag ins,
+               string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> vs1;
+  bits<5> accd;
+  bits<5> vs2;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = fp;
+  let Inst{24-20} = vs2;
+  let Inst{19-15} = vs1;
+  let Inst{14-12} = 0b110;
+  let Inst{11-7} = accd;
+  let Opcode = OPC_OP_M.Value;
+
+  let Uses = [MTYPE, TILEM, TILEK, TILEN];
+}
+
 class RVInstMCVT<bits<6> funct6, bit fp, dag outs, dag ins,
                string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
@@ -537,86 +571,24 @@ class RVInstMCLR<bits<6> funct6, bit fp, dag outs, dag ins,
   let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }
 
-
-class RVInstMV_TR_IN<bits<2> widen, bits<2> tt, bits<2> dim, bits<1>fp,
-                dag outs, dag ins, string opcodestr, string argstr>
+class RVInstMOVE<bits<6> funct6, bit v2m, dag outs, dag ins,
+               string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> vs1;
-  bits<5> td;
-
-  let Inst{31-30} = widen; // 0-1widen, 1-2widen, 2-4widen
-  let Inst{29-28} = tt;
-  let Inst{27-26} = dim;
-  let Inst{25} = fp; // fp
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = vs1;
-  let Inst{14-12} = 0b100; // mvin
-  let Inst{11-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMV_ACC_IN<bits<2> widen, bits<2> tt, bits<2> dim, bits<1>fp,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> vs1;
-  bits<5> acc;
-
-  let Inst{31-30} = widen;
-  let Inst{29-28} = tt;
-  let Inst{27-26} = dim;
-  let Inst{25} = fp; 
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = vs1;
-  let Inst{14-12} = 0b100;
-  let Inst{11-7} = acc;
-  let Opcode = OPC_OP_M.Value;
-
-  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMV_TR_OUT<bits<2> widen, bits<2> tt, bits<2> dim, bits<1>fp,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> ts1;
-  bits<5> vd;
-
-  let Inst{31-30} = widen;
-  let Inst{29-28} = tt;
-  let Inst{27-26} = dim;
-  let Inst{25} = fp;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = ts1;
-  let Inst{14-12} = 0b101;
-  let Inst{11-7} = vd;
-  let Opcode = OPC_OP_M.Value;
-
-  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMV_ACC_OUT<bits<2> widen, bits<2> tt, bits<2> dim, bits<1>fp,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
   bits<5> acc1;
-  bits<5> vd;
+  bits<5> accd;
+  bits<5> rs2;
 
-  let Inst{31-30} = widen;
-  let Inst{29-28} = tt;
-  let Inst{27-26} = dim;
-  let Inst{25} = fp;
+  let Inst{31-26} = funct6;
+  let Inst{25} = v2m;
   let Inst{24-20} = rs2;
   let Inst{19-15} = acc1;
   let Inst{14-12} = 0b101;
-  let Inst{11-7} = vd;
+  let Inst{11-7} = accd;
   let Opcode = OPC_OP_M.Value;
 
   let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }
+
 
 
 class RVInstVSS<bits<3> nf, bit mew, bits<3> width,
