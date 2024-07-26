@@ -1087,7 +1087,7 @@ enum PredefinedTypeIDs {
 ///
 /// Type IDs for non-predefined types will start at
 /// NUM_PREDEF_TYPE_IDs.
-const unsigned NUM_PREDEF_TYPE_IDS = 300;
+const unsigned NUM_PREDEF_TYPE_IDS = 400;
 
 /// Record codes for each kind of type.
 ///

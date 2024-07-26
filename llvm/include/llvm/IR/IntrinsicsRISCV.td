@@ -1246,3 +1246,5 @@ let TargetPrefix = "riscv" in {
   }
 
 } // TargetPrefix = "riscv"
+
+include "llvm/IR/IntrinsicsRISCVMatrix.td"

@@ -32,6 +32,7 @@ protected:
   bool HasC = false;
   bool HasB = false;
   bool HasV = false;
+  bool HasMatrix = false;
   bool HasZba = false;
   bool HasZbb = false;
   bool HasZbc = false;

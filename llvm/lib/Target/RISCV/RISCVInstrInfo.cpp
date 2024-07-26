@@ -906,6 +906,9 @@ bool RISCVInstrInfo::verifyInstruction(const MachineInstr &MI,
         switch (OpType) {
         default:
           llvm_unreachable("Unexpected operand type");
+        case RISCVOp::OPERAND_UIMM2:
+          Ok = isUInt<2>(Imm);
+          break;
         case RISCVOp::OPERAND_UIMM4:
           Ok = isUInt<4>(Imm);
           break;
@@ -1588,6 +1591,19 @@ Register RISCVInstrInfo::getVLENFactoredAmount(MachineFunction &MF,
   return VL;
 }
 
+static bool isRVMatrixLoadStore(unsigned Opcode) {
+  // MLOAD, MSTORE
+  // MLAE16_M ~ MLUFCE8_M
+  // MSAE16_M ~ MSCTE8_M
+  // MSFDAE16_M ~ MSFDCE8_M
+  if ((RISCV::MLAE16_M <= Opcode && Opcode <= RISCV::MLUFCE8_M) ||
+      (RISCV::MSAE16_M <= Opcode && Opcode <= RISCV::MSCTE8_M) ||
+      (RISCV::MSFDAE16_M <= Opcode && Opcode <= RISCV::MSFDCE8_M))
+    return true;
+
+  return false;
+}
+
 static bool isRVVWholeLoadStore(unsigned Opcode) {
   switch (Opcode) {
   default:
@@ -1621,7 +1637,8 @@ bool RISCVInstrInfo::isRVVSpill(const MachineInstr &MI, bool CheckFIs) const {
   // conservative.
   unsigned Opcode = MI.getOpcode();
   if (!RISCVVPseudosTable::getPseudoInfo(Opcode) &&
-      !isRVVWholeLoadStore(Opcode) && !isRVVSpillForZvlsseg(Opcode))
+      !isRVMatrixLoadStore(Opcode) && !isRVVWholeLoadStore(Opcode) &&
+      !isRVVSpillForZvlsseg(Opcode))
     return false;
   return !CheckFIs || any_of(MI.operands(), [](const MachineOperand &MO) {
     return MO.isFI();

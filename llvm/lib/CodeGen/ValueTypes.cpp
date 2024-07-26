@@ -442,6 +442,12 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getInt8Ty(Context), 32);
   case MVT::nxv64i8:
     return ScalableVectorType::get(Type::getInt8Ty(Context), 64);
+  case MVT::nxv128i8:
+    return ScalableVectorType::get(Type::getInt8Ty(Context), 128);
+  case MVT::nxv256i8:
+    return ScalableVectorType::get(Type::getInt8Ty(Context), 256);
+  case MVT::nxv512i8:
+    return ScalableVectorType::get(Type::getInt8Ty(Context), 512);
   case MVT::nxv1i16:
     return ScalableVectorType::get(Type::getInt16Ty(Context), 1);
   case MVT::nxv2i16:
@@ -454,6 +460,12 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getInt16Ty(Context), 16);
   case MVT::nxv32i16:
     return ScalableVectorType::get(Type::getInt16Ty(Context), 32);
+  case MVT::nxv64i16:
+    return ScalableVectorType::get(Type::getInt16Ty(Context), 64);
+  case MVT::nxv128i16:
+    return ScalableVectorType::get(Type::getInt16Ty(Context), 128);
+  case MVT::nxv256i16:
+    return ScalableVectorType::get(Type::getInt16Ty(Context), 256);
   case MVT::nxv1i32:
     return ScalableVectorType::get(Type::getInt32Ty(Context), 1);
   case MVT::nxv2i32:
@@ -466,6 +478,10 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getInt32Ty(Context), 16);
   case MVT::nxv32i32:
     return ScalableVectorType::get(Type::getInt32Ty(Context), 32);
+  case MVT::nxv64i32:
+    return ScalableVectorType::get(Type::getInt32Ty(Context), 64);
+  case MVT::nxv128i32:
+    return ScalableVectorType::get(Type::getInt32Ty(Context), 128);
   case MVT::nxv1i64:
     return ScalableVectorType::get(Type::getInt64Ty(Context), 1);
   case MVT::nxv2i64:
@@ -478,6 +494,8 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getInt64Ty(Context), 16);
   case MVT::nxv32i64:
     return ScalableVectorType::get(Type::getInt64Ty(Context), 32);
+  case MVT::nxv64i64:
+    return ScalableVectorType::get(Type::getInt64Ty(Context), 64);
   case MVT::nxv1f16:
     return ScalableVectorType::get(Type::getHalfTy(Context), 1);
   case MVT::nxv2f16:
@@ -490,6 +508,12 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getHalfTy(Context), 16);
   case MVT::nxv32f16:
     return ScalableVectorType::get(Type::getHalfTy(Context), 32);
+  case MVT::nxv64f16:
+    return ScalableVectorType::get(Type::getHalfTy(Context), 64);
+  case MVT::nxv128f16:
+    return ScalableVectorType::get(Type::getHalfTy(Context), 128);
+  case MVT::nxv256f16:
+    return ScalableVectorType::get(Type::getHalfTy(Context), 256);
   case MVT::nxv1bf16:
     return ScalableVectorType::get(Type::getBFloatTy(Context), 1);
   case MVT::nxv2bf16:
@@ -508,6 +532,12 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getFloatTy(Context), 8);
   case MVT::nxv16f32:
     return ScalableVectorType::get(Type::getFloatTy(Context), 16);
+  case MVT::nxv32f32:
+    return ScalableVectorType::get(Type::getFloatTy(Context), 32);
+  case MVT::nxv64f32:
+    return ScalableVectorType::get(Type::getFloatTy(Context), 64);
+  case MVT::nxv128f32:
+    return ScalableVectorType::get(Type::getFloatTy(Context), 128);
   case MVT::nxv1f64:
     return ScalableVectorType::get(Type::getDoubleTy(Context), 1);
   case MVT::nxv2f64:
@@ -516,6 +546,12 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
     return ScalableVectorType::get(Type::getDoubleTy(Context), 4);
   case MVT::nxv8f64:
     return ScalableVectorType::get(Type::getDoubleTy(Context), 8);
+  case MVT::nxv16f64:
+    return ScalableVectorType::get(Type::getDoubleTy(Context), 16);
+  case MVT::nxv32f64:
+    return ScalableVectorType::get(Type::getDoubleTy(Context), 32);
+  case MVT::nxv64f64:
+    return ScalableVectorType::get(Type::getDoubleTy(Context), 64);
   case MVT::Metadata: return Type::getMetadataTy(Context);
   }
 }

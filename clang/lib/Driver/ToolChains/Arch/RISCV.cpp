@@ -432,6 +432,7 @@ static bool getArchFeatures(const Driver &D, StringRef MArch,
       break;
     case 'v':
       Features.push_back("+experimental-v");
+      Features.push_back("+experimental-matrix");
       Features.push_back("+experimental-zvlsseg");
       break;
     }

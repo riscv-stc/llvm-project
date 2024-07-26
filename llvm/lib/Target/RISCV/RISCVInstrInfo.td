@@ -153,7 +153,7 @@ def uimmlog2xlen : Operand<XLenVT>, ImmLeaf<XLenVT, [{
   let OperandNamespace = "RISCVOp";
 }
 
-def uimm2 : Operand<XLenVT> {
+def uimm2 : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<2>(Imm);}]> {
   let ParserMatchClass = UImmAsmOperand<2>;
   let DecoderMethod = "decodeUImmOperand<2>";
   let OperandType = "OPERAND_UIMM2";
@@ -181,7 +181,7 @@ def uimm7 : Operand<XLenVT> {
   let OperandNamespace = "RISCVOp";
 }
 
-def uimm13 : Operand<XLenVT> {
+def uimm13 : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<13>(Imm);}]> {
   let ParserMatchClass = UImmAsmOperand<13>;
   let DecoderMethod = "decodeUImmOperand<13>";
   let OperandType = "OPERAND_UIMM13";
@@ -1456,4 +1456,5 @@ include "RISCVInstrInfoD.td"
 include "RISCVInstrInfoC.td"
 include "RISCVInstrInfoB.td"
 include "RISCVInstrInfoV.td"
+include "RISCVInstrInfoMatrix.td"
 include "RISCVInstrInfoZfh.td"

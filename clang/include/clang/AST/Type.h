@@ -1503,7 +1503,7 @@ private:
     template <class T> friend class TypePropertyCache;
 
     /// TypeClass bitfield - Enum that specifies what subclass this belongs to.
-    unsigned TC : 8;
+    unsigned TC : 9;
 
     /// Store information on the type dependency.
     unsigned Dependence : llvm::BitWidth<TypeDependence>;
@@ -1571,7 +1571,7 @@ protected:
     unsigned : NumTypeBits;
 
     /// The kind (BuiltinType::Kind) of builtin type this is.
-    unsigned Kind : 8;
+    unsigned Kind : 9;
   };
 
   /// FunctionTypeBitfields store various bits belonging to FunctionProtoType.

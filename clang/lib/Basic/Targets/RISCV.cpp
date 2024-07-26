@@ -186,6 +186,10 @@ void RISCVTargetInfo::getTargetDefines(const LangOptions &Opts,
     Builder.defineMacro("__riscv_vector");
   }
 
+  if (HasMatrix) {
+    Builder.defineMacro("__riscv_matrix");
+  }
+
   if (HasZba)
     Builder.defineMacro("__riscv_zba", "93000");
 
@@ -267,6 +271,7 @@ bool RISCVTargetInfo::hasFeature(StringRef Feature) const {
       .Case("c", HasC)
       .Case("experimental-b", HasB)
       .Case("experimental-v", HasV)
+      .Case("experimental-matrix", HasMatrix)
       .Case("experimental-zba", HasZba)
       .Case("experimental-zbb", HasZbb)
       .Case("experimental-zbc", HasZbc)
@@ -302,6 +307,8 @@ bool RISCVTargetInfo::handleTargetFeatures(std::vector<std::string> &Features,
       HasB = true;
     else if (Feature == "+experimental-v")
       HasV = true;
+    else if (Feature == "+experimental-matrix")
+      HasMatrix = true;
     else if (Feature == "+experimental-zba")
       HasZba = true;
     else if (Feature == "+experimental-zbb")

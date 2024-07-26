@@ -16,6 +16,8 @@
 #endif
 
 #include "clang/Basic/riscv_vector_builtins.inc"
+// matrix extension
+#include "clang/Basic/riscv_matrix_builtins.inc"
 
 // Zbb extension
 TARGET_BUILTIN(__builtin_riscv_orc_b_32, "ZiZi", "nc", "experimental-zbb")
