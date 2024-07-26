@@ -88,6 +88,9 @@ enum ActionType {
   GenRISCVVectorHeader,
   GenRISCVVectorBuiltins,
   GenRISCVVectorBuiltinCG,
+  GenRISCVMatrixHeader,
+  GenRISCVMatrixBuiltins,
+  GenRISCVMatrixBuiltinCG,
   GenAttrDocs,
   GenDiagDocs,
   GenOptDocs,
@@ -243,6 +246,12 @@ cl::opt<ActionType> Action(
                    "Generate riscv_vector_builtins.inc for clang"),
         clEnumValN(GenRISCVVectorBuiltinCG, "gen-riscv-vector-builtin-codegen",
                    "Generate riscv_vector_builtin_cg.inc for clang"),
+        clEnumValN(GenRISCVMatrixHeader, "gen-riscv-matrix-header",
+                   "Generate riscv_matrix.h for clang"),
+        clEnumValN(GenRISCVMatrixBuiltins, "gen-riscv-matrix-builtins",
+                   "Generate riscv_matrix_builtins.inc for clang"),
+        clEnumValN(GenRISCVMatrixBuiltinCG, "gen-riscv-matrix-builtin-codegen",
+                   "Generate riscv_matrix_builtin_cg.inc for clang"),
         clEnumValN(GenAttrDocs, "gen-attr-docs",
                    "Generate attribute documentation"),
         clEnumValN(GenDiagDocs, "gen-diag-docs",
@@ -457,6 +466,15 @@ bool ClangTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
     break;
   case GenRISCVVectorBuiltinCG:
     EmitRVVBuiltinCG(Records, OS);
+    break;
+  case GenRISCVMatrixHeader:
+    EmitRVMatrixHeader(Records, OS);
+    break;
+  case GenRISCVMatrixBuiltins:
+    EmitRVMatrixBuiltins(Records, OS);
+    break;
+  case GenRISCVMatrixBuiltinCG:
+    EmitRVMatrixBuiltinCG(Records, OS);
     break;
   case GenAttrDocs:
     EmitClangAttrDocs(Records, OS);

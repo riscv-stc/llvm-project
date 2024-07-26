@@ -111,6 +111,10 @@ void EmitRVVHeader(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
 void EmitRVVBuiltins(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
 void EmitRVVBuiltinCG(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
 
+void EmitRVMatrixHeader(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
+void EmitRVMatrixBuiltins(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
+void EmitRVMatrixBuiltinCG(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
+
 void EmitCdeHeader(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
 void EmitCdeBuiltinDef(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);
 void EmitCdeBuiltinSema(llvm::RecordKeeper &Records, llvm::raw_ostream &OS);

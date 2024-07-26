@@ -164,6 +164,7 @@ class RISCVAsmParser : public MCTargetAsmParser {
   OperandMatchResultTy parseJALOffset(OperandVector &Operands);
   OperandMatchResultTy parseVTypeI(OperandVector &Operands);
   OperandMatchResultTy parseMTypeI(OperandVector &Operands);
+  OperandMatchResultTy parseLMULTypeI(OperandVector &Operands);
   OperandMatchResultTy parseMaskReg(OperandVector &Operands);
 
   bool parseOperand(OperandVector &Operands, StringRef Mnemonic);
@@ -265,6 +266,7 @@ struct RISCVOperand : public MCParsedAsmOperand {
     SystemRegister,
     VType,
     MType,
+    LMULType,
   } Kind;
 
   bool IsRV64;
@@ -278,6 +280,10 @@ struct RISCVOperand : public MCParsedAsmOperand {
   };
 
   struct MTypeOp {
+    unsigned Val;
+  };
+
+  struct LMULTypeOp {
     unsigned Val;
   };
 
@@ -301,6 +307,7 @@ struct RISCVOperand : public MCParsedAsmOperand {
     struct SysRegOp SysReg;
     struct VTypeOp VType;
     struct MTypeOp MType;
+    struct LMULTypeOp LMULType;
   };
 
   RISCVOperand(KindTy K) : MCParsedAsmOperand(), Kind(K) {}
@@ -330,6 +337,9 @@ public:
     case KindTy::MType:
       MType = o.MType;
       break;
+    case KindTy::LMULType:
+      LMULType = o.LMULType;
+      break;
     }
   }
 
@@ -343,6 +353,7 @@ public:
   bool isSystemRegister() const { return Kind == KindTy::SystemRegister; }
   bool isVType() const { return Kind == KindTy::VType; }
   bool isMType() const { return Kind == KindTy::MType; }
+  bool isLMULTypeI() const { return Kind == KindTy::LMULType; }
 
   bool isGPR() const {
     return Kind == KindTy::Register &&
@@ -782,6 +793,11 @@ public:
     return MType.Val;
   }
 
+  unsigned getLMULType() const {
+    assert(Kind == KindTy::LMULType && "Invalid type access!");
+    return LMULType.Val;
+  }  
+
   void print(raw_ostream &OS) const override {
     auto RegName = [](unsigned Reg) {
       if (Reg)
@@ -810,7 +826,12 @@ public:
       break;
     case KindTy::MType:
       OS << "<mtype: ";
-      RISCVVType::printMType(getMType(), OS);
+      RISCVMType::printMType(getMType(), OS);
+      OS << '>';
+      break;
+    case KindTy::LMULType:
+      OS << "<lmultype: ";
+      RISCVMType::printLUML(getLMULType(), OS);
       OS << '>';
       break;
     }
@@ -855,6 +876,14 @@ public:
     return Op;
   }
 
+  static std::unique_ptr<RISCVOperand> createLMULType(unsigned LMULTypeI, SMLoc S,
+                                                   bool IsRV64) {
+    auto Op = std::make_unique<RISCVOperand>(KindTy::LMULType);
+    Op->LMULType.Val = LMULTypeI;
+    Op->StartLoc = S;
+    Op->IsRV64 = IsRV64;
+    return Op;
+  }
   static std::unique_ptr<RISCVOperand>
   createSysReg(StringRef Str, SMLoc S, unsigned Encoding, bool IsRV64) {
     auto Op = std::make_unique<RISCVOperand>(KindTy::SystemRegister);
@@ -928,6 +957,11 @@ public:
   void addMTypeIOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
     Inst.addOperand(MCOperand::createImm(getMType()));
+  }
+
+  void addLMULTypeIOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    Inst.addOperand(MCOperand::createImm(getLMULType()));
   }
 
   void addCSRSystemRegisterOperands(MCInst &Inst, unsigned N) const {
@@ -1240,7 +1274,14 @@ bool RISCVAsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
     return Error(
         ErrorLoc,
         "operand must be "
-        "e[8|16|32|64|128|256|512|1024]");
+        "e[8|16|32|64],m[1|2|4],[ba|bu],fp64,bf16,tf32,fp8,int4");
+  }
+  case Match_InvalidLMULTypeI: {
+    SMLoc ErrorLoc = ((RISCVOperand &)*Operands[ErrorInfo]).getStartLoc();
+    return Error(
+        ErrorLoc,
+        "operand must be "
+        "m[0|1|2|4]");
   }
   case Match_InvalidVMaskRegister: {
     SMLoc ErrorLoc = ((RISCVOperand &)*Operands[ErrorInfo]).getStartLoc();
@@ -1689,6 +1730,64 @@ MatchFail:
   return MatchOperand_NoMatch;
 }
 
+OperandMatchResultTy RISCVAsmParser::parseLMULTypeI(OperandVector &Operands) {
+  SMLoc S = getLoc();
+  if (getLexer().isNot(AsmToken::Identifier))
+    return MatchOperand_NoMatch;
+
+  SmallVector<AsmToken, 1> MTypeIElements;
+  // Put all the tokens for mtypei operand into VTypeIElements vector.
+  while (getLexer().isNot(AsmToken::EndOfStatement)) {
+    MTypeIElements.push_back(getLexer().getTok());
+    getLexer().Lex();
+    if (getLexer().is(AsmToken::EndOfStatement))
+      break;
+    if (getLexer().isNot(AsmToken::Comma))
+      goto MatchFail;
+    AsmToken Comma = getLexer().getTok();
+    MTypeIElements.push_back(Comma);
+    getLexer().Lex();
+  }
+
+  // m0/m1/m2/m4
+  if (MTypeIElements.size() == 1) {
+    unsigned LMUL;
+    StringRef Name = MTypeIElements[0].getIdentifier();
+    if (!Name.consume_front("m"))
+      goto MatchFail;
+    if (Name.getAsInteger(10, LMUL))
+      goto MatchFail;
+    if (!RISCVMType::isValidLMUL(LMUL))
+      goto MatchFail;
+
+    unsigned FORMAT = 0;
+    switch (LMUL)
+    {
+    case 0:
+      FORMAT = 3;
+      break;
+    case 1:
+      FORMAT = 0;
+      break;
+    case 2:
+      FORMAT = 1;
+      break;
+    case 4:
+      FORMAT = 2;
+      break;
+    }
+
+    Operands.push_back(RISCVOperand::createLMULType(FORMAT, S, isRV64()));
+    return MatchOperand_Success;
+  }
+
+// If NoMatch, unlex all the tokens that comprise a vtypei operand
+MatchFail:
+  while (!MTypeIElements.empty())
+    getLexer().UnLex(MTypeIElements.pop_back_val());
+  return MatchOperand_NoMatch;
+}
+
 OperandMatchResultTy RISCVAsmParser::parseMTypeI(OperandVector &Operands) {
   SMLoc S = getLoc();
   if (getLexer().isNot(AsmToken::Identifier))
@@ -1708,33 +1807,60 @@ OperandMatchResultTy RISCVAsmParser::parseMTypeI(OperandVector &Operands) {
     getLexer().Lex();
   }
 
-  if (MTypeIElements.size() == 3 || MTypeIElements.size() == 1) {
-    // The MTypeIElements layout is:
-    // SEW comma maccq
-    //  0    1    2    
+  // The MTypeIElements layout is:
+  // msettypei t0, e8/e16/e32/e64, m1/m2/m4, ba/bu, fp64, bf16, tf32, fp8, int4
+  // SEW comma LMUL comma mba comma format(bits5)
+  //  0    1    2     3    4   5    6
+  if (MTypeIElements.size() >= 5) {
+    unsigned MSEW;
     StringRef Name = MTypeIElements[0].getIdentifier();
     if (!Name.consume_front("e"))
       goto MatchFail;
-    unsigned Sew;
-    if (Name.getAsInteger(10, Sew))
+    if (Name.getAsInteger(10, MSEW))
       goto MatchFail;
-    if (!RISCVVType::isValidSEW(Sew))
+    if (!RISCVMType::isValidMSEW(MSEW))
       goto MatchFail;
 
-    bool MatrixAccQ = false; 
-    if (MTypeIElements.size() == 3) {
-      Name = MTypeIElements[2].getIdentifier();
-      if (Name == "maccq")
-        MatrixAccQ = true;
-      else if (Name == "maccd")
-        MatrixAccQ = false;
-      else
+    unsigned MLMUL;
+    Name = MTypeIElements[2].getIdentifier();
+    if (!Name.consume_front("m"))
+      goto MatchFail;
+    if (Name.getAsInteger(10, MLMUL))
+      goto MatchFail;
+    if (!RISCVMType::isValidMLMUL(MLMUL))
+      goto MatchFail;
+
+    bool MBA;
+    Name = MTypeIElements[4].getIdentifier();
+    if (Name == "ba")
+      MBA = true;
+    else if (Name == "bu")
+      MBA = false;
+    else
+      goto MatchFail;
+
+    unsigned FORMAT = 0;
+    for (unsigned i = 5; i < MTypeIElements.size(); ++i) {
+      if ((i % 2) != 0)
+        continue;
+      Name = MTypeIElements[i].getIdentifier();
+      if (Name == "fp64") {
+        FORMAT |= 1 << 0;
+      } else if (Name == "bf16") {
+        FORMAT |= 1 << 1;
+      } else if (Name == "tf32") {
+        FORMAT |= 1 << 2;
+      } else if (Name == "fp8") {
+        FORMAT |= 1 << 3;
+      } else if (Name == "int4") {
+        FORMAT |= 1 << 4;
+      } else {
         goto MatchFail;
+      }
     }
 
-
     unsigned MTypeI =
-        RISCVVType::encodeMTYPE(Sew, MatrixAccQ);
+        RISCVMType::encodeMTYPE(MLMUL, MSEW, MBA, FORMAT);
     Operands.push_back(RISCVOperand::createMType(MTypeI, S, isRV64()));
     return MatchOperand_Success;
   }

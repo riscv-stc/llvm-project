@@ -189,6 +189,13 @@ def HasStdExtZvamo : Predicate<"Subtarget->hasStdExtZvamo()">,
                                AssemblerPredicate<(all_of FeatureExtZvamo),
                                "'Zvamo' (Vector AMO Operations)">;
 
+def FeatureStdExtMatrix
+    : SubtargetFeature<"experimental-matrix", "HasStdExtMatrix", "true",
+                       "'Matrix' (Matrix Instructions)">;
+def HasStdExtMatrix : Predicate<"Subtarget->hasStdExtMatrix()">,
+                           AssemblerPredicate<(all_of FeatureStdExtMatrix),
+                           "'Matrix' (Matrix Instructions)">;
+
 def Feature64Bit
     : SubtargetFeature<"64bit", "HasRV64", "true", "Implements RV64">;
 def IsRV64 : Predicate<"Subtarget->is64Bit()">,

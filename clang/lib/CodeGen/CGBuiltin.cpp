@@ -18550,8 +18550,11 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
     IntrinsicTypes = {ResultType};
     break;
   }
+
   // Vector builtins are handled from here.
 #include "clang/Basic/riscv_vector_builtin_cg.inc"
+  // Matrix builtins are handled from here.
+#include "clang/Basic/riscv_matrix_builtin_cg.inc"
   }
 
   assert(ID != Intrinsic::not_intrinsic);

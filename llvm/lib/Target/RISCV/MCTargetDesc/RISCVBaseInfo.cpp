@@ -126,14 +126,27 @@ unsigned RISCVVType::encodeVTYPE(RISCVII::VLMUL VLMUL, unsigned SEW,
 //
 // Bits | Name       | Description
 // -----+------------+------------------------------------------------
-// 2:0  | msew[2:0]  | Standard element width (SEW) setting
-unsigned RISCVVType::encodeMTYPE(unsigned SEW, bool maccq) {
-  assert(isValidSEW(SEW) && "Invalid SEW");
-  unsigned MSEWBits = Log2_32(SEW) - 3;
-  unsigned MTypeI = (MSEWBits & 0x7);
-  if (maccq)
-    MTypeI |= (1 << 3);
+// 10   | mint4      | Support 4-bit integer
+// 9    | mfp8       | Support 8-bit float point format
+// 8    | mtf32      | Support TensorFloat32 format
+// 7    | mbf16      | Support BFloat16 format
+// 6    | mfp64      | Support 64-bit float point
+// 5    | mba        | Matrix out of bound agnostic
+// 4:2  | msew[2:0]  | Selected element width (SEW) setting
+// 1:0  | mlmul[1:0] | Register group multiplier (LMUL) setting
+unsigned RISCVMType::encodeMTYPE(unsigned MLMUL, unsigned MSEW, bool MBA, unsigned FORMAT) {
+  assert(isValidMSEW(MSEW) && "Invalid MSEW");
+  assert(isValidMLMUL(MLMUL) && "Invalid MLMUL");
 
+  unsigned MTypeI = Log2_32(MLMUL);
+
+  unsigned MSEWBits = Log2_32(MSEW) - 3;
+  MTypeI |= (MSEWBits & 0x7) << 2;
+
+  if (MBA)
+    MTypeI |= 1 << 5;
+
+  MTypeI |= FORMAT << 6;
   return MTypeI;
 }
 
@@ -178,9 +191,28 @@ void RISCVVType::printVType(unsigned VType, raw_ostream &OS) {
     OS << ", mu";
 }
 
-void RISCVVType::printMType(unsigned MType, raw_ostream &OS) {
-  unsigned Sew = getMSEW(MType);
-  OS << "e" << Sew;
+void RISCVMType::printMType(unsigned MType, raw_ostream &OS) {
+  OS << "e" << getMSEW(MType);
+  OS << ", m" << getMLMUL(MType);
+  if (isMatrixAgnostic(MType))
+    OS << ", ba";
+  else
+    OS << ", bu";
+  unsigned mformat = getMFormat(MType);
+  if (mformat & 0x1)
+    OS << ", fp64";
+  if (mformat & 0x2)
+    OS << ", bf16";
+  if (mformat & 0x4)
+    OS << ", tf32";
+  if (mformat & 0x8)
+    OS << ", fp8";
+  if (mformat & 0x10)
+    OS << ", int4";
+}
+
+void RISCVMType::printLUML(unsigned LMUL, raw_ostream &OS) {
+  OS << "m" << getLMUL(LMUL);
 }
 
 } // namespace llvm

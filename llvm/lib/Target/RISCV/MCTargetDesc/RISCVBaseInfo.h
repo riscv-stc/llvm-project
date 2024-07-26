@@ -103,6 +103,12 @@ enum VLMUL : uint8_t {
   LMUL_F2
 };
 
+enum MLMUL : uint8_t {
+  MLMUL_1 = 0,
+  MLMUL_2,
+  MLMUL_4
+};
+
 enum MIT : uint8_t {
   MIT_TILEM,
   MIT_TILEN,
@@ -343,8 +349,6 @@ inline static bool isValidLMUL(unsigned LMUL, bool Fractional) {
 unsigned encodeVTYPE(RISCVII::VLMUL VLMUL, unsigned SEW, bool TailAgnostic,
                      bool MaskAgnostic);
 
-unsigned encodeMTYPE(unsigned SEW, bool maccq);
-
 inline static RISCVII::VLMUL getVLMUL(unsigned VType) {
   unsigned VLMUL = VType & 0x7;
   return static_cast<RISCVII::VLMUL>(VLMUL);
@@ -363,25 +367,74 @@ inline static unsigned getSEW(unsigned VType) {
   return decodeVSEW(VSEW);
 }
 
+inline static bool isTailAgnostic(unsigned VType) { return VType & 0x40; }
+
+inline static bool isMaskAgnostic(unsigned VType) { return VType & 0x80; }
+
+void printVType(unsigned VType, raw_ostream &OS);
+} // namespace RISCVVType
+
+
+namespace RISCVMType {
+// Is this a SEW value that can be encoded into the MTYPE format.
+inline static bool isValidMSEW(unsigned MSEW) {
+  return isPowerOf2_32(MSEW) && MSEW >= 8 && MSEW <= 64;
+}
+
+// Is this a MLMUL value that can be encoded into the MTYPE format.
+inline static bool isValidMLMUL(unsigned MLMUL) {
+  return isPowerOf2_32(MLMUL) && MLMUL >= 1 && MLMUL <= 4;
+}
+
+inline static bool isValidLMUL(unsigned LMUL) {
+  return LMUL == 0 || LMUL == 1 || LMUL == 2 || LMUL == 4;
+}
+
+unsigned encodeMTYPE(unsigned MLMUL, unsigned MSEW, bool MBA, unsigned FORMAT);
+
+inline static unsigned getMLMUL(unsigned MType) {
+  unsigned MLMUL = MType & 0x3;
+  return 1 << MLMUL;
+}
+
+inline static unsigned getLMUL(unsigned LMUL) {
+  unsigned LMULI = LMUL & 0x3;
+  if (LMULI == 3)
+    return 0;
+  return 1 << LMULI;
+}
+
+inline static unsigned decodeMLMUL(RISCVII::MLMUL MLMUL) {
+  switch (MLMUL) {
+  case RISCVII::MLMUL::MLMUL_1:
+  case RISCVII::MLMUL::MLMUL_2:
+  case RISCVII::MLMUL::MLMUL_4:
+    return 1 << static_cast<unsigned>(MLMUL);
+  default:
+    llvm_unreachable("Unexpected MLMUL value!");
+  }
+}
+
 inline static unsigned decodeMSEW(unsigned MSEW) {
   assert(MSEW < 8 && "Unexpected MSEW value");
   return 1 << (MSEW + 3);
 }
 
 inline static unsigned getMSEW(unsigned MType) {
-  unsigned MSEW = MType & 0x7;
-  return decodeMSEW(MSEW);
+  return decodeMSEW((MType >> 2) & 0x7);
 }
 
-inline static bool isTailAgnostic(unsigned VType) { return VType & 0x40; }
+inline static unsigned getMFormat(unsigned MType) {
+  return (MType >> 6) & 0x1f;
+}
 
-inline static bool isMaskAgnostic(unsigned VType) { return VType & 0x80; }
-
-void printVType(unsigned VType, raw_ostream &OS);
+inline static bool isMatrixAgnostic(unsigned MType) { return MType & 0x20; }
 
 void printMType(unsigned MType, raw_ostream &OS);
 
-} // namespace RISCVVType
+void printLUML(unsigned LMUL, raw_ostream &OS);
+
+} // namespace RISCVMType
 
 } // namespace llvm
 
