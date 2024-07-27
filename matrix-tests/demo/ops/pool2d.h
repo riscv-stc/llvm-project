@@ -1,22 +1,27 @@
-#ifndef MATRIX_TESTS_DEMO_OPS_POOL_H_
-#define MATRIX_TESTS_DEMO_OPS_POOL_H_
+#ifndef _POOL2D_H_
+#define _POOL2D_H_
 
-#include "../tensor.h"
 #include "config.h"
+#include "tensor.h"
 #include <riscv_matrix.h>
 
-void maxpool2d(Tensor *dst, Tensor *src, int kernel_size, int stride,
-               int padding, int dilation) {
-  const int outh = dst->shape[0];
-  const int outw = dst->shape[1];
+void maxpool2d(Tensor *dst, Tensor *src, Pool2dConfig *cfg) {
+  float *fmap = (float *)src->data;
+  float *dist = (float *)dst->data;
+  int sh = cfg->stride[0], sw = cfg->stride[1];
+  int dh = cfg->dilation[0], dw = cfg->dilation[1];
+  int pt = cfg->padding[0], pb = cfg->padding[1], pl = cfg->padding[2],
+      pr = cfg->padding[3];
+  int kh = cfg->kernel_size[0], kw = cfg->kernel_size[1];
+  int inh = src->shape[1], inw = src->shape[2], inc = src->shape[3];
+  int outh = dst->shape[1], outw = dst->shape[2], outc = dst->shape[3];
   const int M = outh * outw;
-  const int N = dst->shape[2];
-  int tile_m, tile_n;
+  const int N = outc;
+  int tile_m, tile_k, tile_n;
   msettype(E32, M1, BA);
-  msetoutsh(outh << 16 | outw,
-            dilation << 24 | dilation << 16 | stride << 8 | stride);
-  msetinsh(src->shape[0] << 16 | src->shape[1],
-           padding << 24 | padding << 16 | padding << 8 | padding);
+  msetoutsh(outh << 16 | outw, dh << 24 | dw << 16 | sh << 8 | sw);
+  msetinsh(inh << 16 | inw, pt << 24 | pb << 16 | pl << 8 | pr);
+  msetpadval(0);
 
   for (int m = 0; m < M; m += tile_m) {
     tile_m = msettilem(M - m);
@@ -26,67 +31,74 @@ void maxpool2d(Tensor *dst, Tensor *src, int kernel_size, int stride,
     for (int n = 0; n < N; n += tile_n) {
       tile_n = msettilen(N - n);
 
-      mfloat32m1_t out = mlce32_m1((float *)dst->data + m * dst->shape[2] + n,
-                                   dst->shape[2] * sizeof(float));
-      out = mfmv_s_f(out, 0xFF800000, 0);
+      mfloat32m1_t out;
+      out = mfmv_s_f(out, -100, 0);
       out = mbcce_m(out);
-      for (int ki = 0; ki < kernel_size; ki++) {
-        int inh_pos = outh_pos * stride - padding + ki * dilation;
-        for (int wi = 0; wi < kernel_size; wi++) {
-          int inw_pos = outw_pos * stride - padding + wi * dilation;
-          float *fmap = (float *)src->data +
-                        inh_pos * src->shape[1] * src->shape[2] +
-                        inw_pos * src->shape[2];
-          mfloat32m1_t tr0 = mlufce32_m(fmap, src->shape[2] * sizeof(float));
+      for (int hi = 0; hi < kh; ++hi) {
+        int inh_pos = outh_pos * sh - pt + hi * dh;
+
+        for (int wi = 0; wi < kw; ++wi) {
+          int inw_pos = outw_pos * sw - pl + wi * dw;
+          msetsk(inh_pos << 16 | (inw_pos & 0xffff),
+                 (wi * dw) << 16 | outw_pos);
+          mfloat32m1_t tr0 =
+              mlufce32_m(fmap + inh_pos * inw * inc + inw_pos * inc + n,
+                         inc * sizeof(float));
           out = mfmax_mm(out, tr0);
         }
       }
-      msce32_m(out, (float *)dst->data + m * dst->shape[2] + n,
-               dst->shape[2] * sizeof(float));
+      msce32_m(out, dist + m * N + n, N * sizeof(float));
     }
   }
 }
 
-void avgpool2d(Tensor *dst, Tensor *src, int kernel_size, int stride,
-               int padding, int dilation) {
-  const int outh = dst->shape[0];
-  const int outw = dst->shape[1];
+void avgpool2d(Tensor *dst, Tensor *src, Pool2dConfig *cfg) {
+  float *fmap = (float *)src->data;
+  float *dist = (float *)dst->data;
+  int sh = cfg->stride[0], sw = cfg->stride[1];
+  int dh = cfg->dilation[0], dw = cfg->dilation[1];
+  int pt = cfg->padding[0], pb = cfg->padding[1], pl = cfg->padding[2],
+      pr = cfg->padding[3];
+  int kh = cfg->kernel_size[0], kw = cfg->kernel_size[1];
+  int inh = src->shape[1], inw = src->shape[2], inc = src->shape[3];
+  int outh = dst->shape[1], outw = dst->shape[2], outc = dst->shape[3];
   const int M = outh * outw;
-  const int N = dst->shape[2];
-  int tile_m, tile_n;
+  const int N = outc;
+  int tile_m, tile_k, tile_n;
   msettype(E32, M1, BA);
-  msetoutsh(outh << 16 | outw,
-            dilation << 24 | dilation << 16 | stride << 8 | stride);
-  msetinsh(src->shape[0] << 16 | src->shape[1],
-           padding << 24 | padding << 16 | padding << 8 | padding);
-  mfloat32m1_t div;
-  mfmv_s_f(div, kernel_size * kernel_size, 0);
-  mbcce_m(div);
+  msetoutsh(outh << 16 | outw, dh << 24 | dw << 16 | sh << 8 | sw);
+  msetinsh(inh << 16 | inw, pt << 24 | pb << 16 | pl << 8 | pr);
+  msetpadval(0);
+
   for (int m = 0; m < M; m += tile_m) {
     tile_m = msettilem(M - m);
     int outh_pos = m / outw;
     int outw_pos = m % outw;
+
     for (int n = 0; n < N; n += tile_n) {
       tile_n = msettilen(N - n);
-      mfloat32m1_t out = mlce32_m1((float *)dst->data + m * dst->shape[2] + n,
-                                   dst->shape[2] * sizeof(float));
-      for (int ki = 0; ki < kernel_size; ki++) {
-        int inh_pos = outh_pos * stride - padding + ki * dilation;
-        for (int wi = 0; wi < kernel_size; wi++) {
-          int inw_pos = outw_pos * stride - padding + wi * dilation;
-          msetsk(inh_pos << 16 | inw_pos, (wi * dilation) << 16 | outw_pos);
-          float *fmap = (float *)src->data +
-                        inh_pos * src->shape[1] * src->shape[2] +
-                        inw_pos * src->shape[2];
-          mfloat32m1_t tr0 = mlufce32_m(fmap, src->shape[2] * sizeof(float));
+      mfloat32m1_t out;
+      out = mfsub_mm(out, out);
+      mfloat32m1_t dividend;
+      dividend = mfmv_s_f(dividend, kh * kw, 0);
+      dividend = mbcce_m(dividend);
+
+      for (int hi = 0; hi < kh; ++hi) {
+        int inh_pos = outh_pos * sh - pt + hi * dh;
+
+        for (int wi = 0; wi < kw; ++wi) {
+          int inw_pos = outw_pos * sw - pl + wi * dw;
+          msetsk(inh_pos << 16 | (inw_pos & 0xffff),
+                 (wi * dw) << 16 | outw_pos);
+          mfloat32m1_t tr0 =
+              mlufce32_m(fmap + inh_pos * inw * inc + inw_pos * inc + n,
+                         inc * sizeof(float));
           out = mfadd_mm(out, tr0);
         }
       }
-      out = mfdiv_mm(out, div);
-      msce32_m(out, (float *)dst->data + m * dst->shape[2] + n,
-               dst->shape[2] * sizeof(float));
+      out = mfdiv_mm(out, dividend);
+      msce32_m(out, dist + m * N + n, N * sizeof(float));
     }
   }
 }
-
-#endif // MATRIX_TESTS_DEMO_OPS_POOL_H_
+#endif // _POOL2D_H_

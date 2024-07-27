@@ -6702,6 +6702,8 @@ void RISCVTargetLowering::computeKnownBitsForTargetNode(const SDValue Op,
     break;
   }
   case RISCVISD::READ_VLENB:
+  case RISCVISD::READ_MLENB:
+  case RISCVISD::READ_MRLENB:
     // We assume VLENB is at least 16 bytes.
     Known.Zero.setLowBits(4);
     // We assume VLENB is no more than 65536 / 8 bytes.
@@ -8495,6 +8497,8 @@ const char *RISCVTargetLowering::getTargetNodeName(unsigned Opcode) const {
   NODE_NAME_CASE(SPLAT_VECTOR_I64)
   NODE_NAME_CASE(SPLAT_VECTOR_SPLIT_I64_VL)
   NODE_NAME_CASE(READ_VLENB)
+  NODE_NAME_CASE(READ_MLENB)
+  NODE_NAME_CASE(READ_MRLENB)
   NODE_NAME_CASE(TRUNCATE_VECTOR_VL)
   NODE_NAME_CASE(VSLIDEUP_VL)
   NODE_NAME_CASE(VSLIDE1UP_VL)

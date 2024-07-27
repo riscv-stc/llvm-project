@@ -16,10 +16,13 @@ void add_relu(Tensor *dist, Tensor *src1, Tensor *src2) {
     tile_m = msettilem(M - m);
     for (int n = 0; n < N; n += tile_n) {
       tile_n = msettilen(N - n);
+      mfloat32m1_t zero;
+      zero = mfsub_mm(zero, zero);
       int offset = m * N + n;
       mfloat32m1_t tr0 = mlce32_m1(src1_ptr + offset, N * sizeof(float));
       mfloat32m1_t tr1 = mlce32_m1(src2_ptr + offset, N * sizeof(float));
       tr0 = mfadd_mm(tr0, tr1);
+      tr0 = mfmax_mm(tr0, zero);
       msce32_m(tr0, dist_ptr + offset, N * sizeof(float));
     }
   }

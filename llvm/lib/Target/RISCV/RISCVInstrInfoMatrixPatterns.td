@@ -1,7 +1,8 @@
-class MatrixTypeInfo<ValueType Vec, int Sew, int Lmul, TRReg Reg,
+class MatrixTypeInfo<ValueType Mat, ValueType Vec, int Sew, int Lmul, TRReg Reg,
                      ValueType Scal = XLenVT, RegisterClass ScalarReg = GPR>
 {
-    ValueType Matrix = Vec;
+    ValueType Matrix = Mat;
+    ValueType Vector = Vec;
     int SEW = Sew;
     int LMUL = Lmul;
     TRReg TRRegClass = Reg;
@@ -23,44 +24,44 @@ class MatrixTypeInfoMToW<MatrixTypeInfo mti, MatrixTypeInfo wti>
 defset list<MatrixTypeInfo> AllMatrixs = {
   defset list<MatrixTypeInfo> AllIntegerMatrixs = {
     defset list<MatrixTypeInfo> AllIntegerM1 = {
-      def MI8M1  : MatrixTypeInfo<mint8m1_t,   8, 1, TRR>;
-      def MI16M1 : MatrixTypeInfo<mint16m1_t, 16, 1, TRR>;
-      def MI32M1 : MatrixTypeInfo<mint32m1_t, 32, 1, TRR>;
-      def MI64M1 : MatrixTypeInfo<mint64m1_t, 64, 1, TRR>;
+      def MI8M1  : MatrixTypeInfo<mint8m1_t,  vint8m1_t,   8, 1, TRR>;
+      def MI16M1 : MatrixTypeInfo<mint16m1_t, vint16m1_t, 16, 1, TRR>;
+      def MI32M1 : MatrixTypeInfo<mint32m1_t, vint32m1_t, 32, 1, TRR>;
+      def MI64M1 : MatrixTypeInfo<mint64m1_t, vint64m1_t, 64, 1, TRR>;
     }
 
     defset list<MatrixTypeInfo> AllIntegerM2 = {
-      def MI8M2  : MatrixTypeInfo<mint8m2_t,   8, 2, TRRM2>;
-      def MI16M2 : MatrixTypeInfo<mint16m2_t, 16, 2, TRRM2>;
-      def MI32M2 : MatrixTypeInfo<mint32m2_t, 32, 2, TRRM2>;
-      def MI64M2 : MatrixTypeInfo<mint64m2_t, 64, 2, TRRM2>;
+      def MI8M2  : MatrixTypeInfo<mint8m2_t,  vint8m2_t,   8, 2, TRRM2>;
+      def MI16M2 : MatrixTypeInfo<mint16m2_t, vint16m2_t, 16, 2, TRRM2>;
+      def MI32M2 : MatrixTypeInfo<mint32m2_t, vint32m2_t, 32, 2, TRRM2>;
+      def MI64M2 : MatrixTypeInfo<mint64m2_t, vint64m2_t, 64, 2, TRRM2>;
     }
 
     defset list<MatrixTypeInfo> AllIntegerM4 = {
-      def MI8M4  : MatrixTypeInfo<mint8m4_t,   8, 4, TRRM4>;
-      def MI16M4 : MatrixTypeInfo<mint16m4_t, 16, 4, TRRM4>;
-      def MI32M4 : MatrixTypeInfo<mint32m4_t, 32, 4, TRRM4>;
-      def MI64M4 : MatrixTypeInfo<mint64m4_t, 64, 4, TRRM4>;
+      def MI8M4  : MatrixTypeInfo<mint8m4_t,  vint8m4_t,   8, 4, TRRM4>;
+      def MI16M4 : MatrixTypeInfo<mint16m4_t, vint16m4_t, 16, 4, TRRM4>;
+      def MI32M4 : MatrixTypeInfo<mint32m4_t, vint32m4_t, 32, 4, TRRM4>;
+      def MI64M4 : MatrixTypeInfo<mint64m4_t, vint64m4_t, 64, 4, TRRM4>;
     }
   }
 
   defset list<MatrixTypeInfo> AllFloatMatrixs = {
     defset list<MatrixTypeInfo> AllFloatM1 = {
-      def MF16M1 : MatrixTypeInfo<mfloat16m1_t, 16, 1, TRR, f16, FPR16>;
-      def MF32M1 : MatrixTypeInfo<mfloat32m1_t, 32, 1, TRR, f32, FPR32>;
-      def MF64M1 : MatrixTypeInfo<mfloat64m1_t, 64, 1, TRR, f64, FPR64>;
+      def MF16M1 : MatrixTypeInfo<mfloat16m1_t, vfloat16m1_t, 16, 1, TRR, f16, FPR16>;
+      def MF32M1 : MatrixTypeInfo<mfloat32m1_t, vfloat32m1_t, 32, 1, TRR, f32, FPR32>;
+      def MF64M1 : MatrixTypeInfo<mfloat64m1_t, vfloat64m1_t, 64, 1, TRR, f64, FPR64>;
     }
 
     defset list<MatrixTypeInfo> AllFloatM2 = {
-      def MF16M2 : MatrixTypeInfo<mfloat16m2_t, 16, 2, TRRM2, f16, FPR16>;
-      def MF32M2 : MatrixTypeInfo<mfloat32m2_t, 32, 2, TRRM2, f32, FPR32>;
-      def MF64M2 : MatrixTypeInfo<mfloat64m2_t, 64, 2, TRRM2, f64, FPR64>;
+      def MF16M2 : MatrixTypeInfo<mfloat16m2_t, vfloat16m2_t, 16, 2, TRRM2, f16, FPR16>;
+      def MF32M2 : MatrixTypeInfo<mfloat32m2_t, vfloat32m2_t, 32, 2, TRRM2, f32, FPR32>;
+      def MF64M2 : MatrixTypeInfo<mfloat64m2_t, vfloat64m2_t, 64, 2, TRRM2, f64, FPR64>;
     }
 
     defset list<MatrixTypeInfo> AllFloatM4 = {
-      def MF16M4 : MatrixTypeInfo<mfloat16m4_t, 16, 4, TRRM4, f16, FPR16>;
-      def MF32M4 : MatrixTypeInfo<mfloat32m4_t, 32, 4, TRRM4, f32, FPR32>;
-      def MF64M4 : MatrixTypeInfo<mfloat64m4_t, 64, 4, TRRM4, f64, FPR64>;
+      def MF16M4 : MatrixTypeInfo<mfloat16m4_t, vfloat16m4_t, 16, 4, TRRM4, f16, FPR16>;
+      def MF32M4 : MatrixTypeInfo<mfloat32m4_t, vfloat32m4_t, 32, 4, TRRM4, f32, FPR32>;
+      def MF64M4 : MatrixTypeInfo<mfloat64m4_t, vfloat64m4_t, 64, 4, TRRM4, f64, FPR64>;
     }
   }
 }
@@ -682,38 +683,42 @@ class PatMLoadV<SDPatternOperator OpNode, RVInst Inst, ValueType type>
           (type (Inst BaseAddr:$rs1, GPR:$rs2))>;
 
 foreach mtype = !listconcat(AllIntegerM1, AllFloatM1) in {
-  def : PatMLoadV<int_riscv_mlae_v, !cast<RVInst>("MLAE"#mtype.SEW#"_V"), mtype.Matrix>;
-  def : PatMLoadV<int_riscv_mlbe_v, !cast<RVInst>("MLBE"#mtype.SEW#"_V"), mtype.Matrix>;
-  def : PatMLoadV<int_riscv_mlce_v, !cast<RVInst>("MLCE"#mtype.SEW#"_V"), mtype.Matrix>;
+  def : PatMLoadV<int_riscv_mlae_v, !cast<RVInst>("MLAE"#mtype.SEW#"_V"), mtype.Vector>;
+  def : PatMLoadV<int_riscv_mlbe_v, !cast<RVInst>("MLBE"#mtype.SEW#"_V"), mtype.Vector>;
+  def : PatMLoadV<int_riscv_mlce_v, !cast<RVInst>("MLCE"#mtype.SEW#"_V"), mtype.Vector>;
 }
 
 class PatMStoreV<SDPatternOperator OpNode, RVInst Inst, ValueType type>
     : Pat<(OpNode type:$ts1, BaseAddr:$rd1, GPR:$rs2),
-          (Inst TRR:$ts1, BaseAddr:$rd1, GPR:$rs2)>;
+          (Inst VR:$ts1, BaseAddr:$rd1, GPR:$rs2)>;
 
 foreach mtype = !listconcat(AllIntegerM1, AllFloatM1) in {
-  def : PatMStoreV<int_riscv_msae_v, !cast<RVInst>("MSAE"#mtype.SEW#"_V"), mtype.Matrix>;
-  def : PatMStoreV<int_riscv_msbe_v, !cast<RVInst>("MSBE"#mtype.SEW#"_V"), mtype.Matrix>;
-  def : PatMStoreV<int_riscv_msce_v, !cast<RVInst>("MSCE"#mtype.SEW#"_V"), mtype.Matrix>;
+  def : PatMStoreV<int_riscv_msae_v, !cast<RVInst>("MSAE"#mtype.SEW#"_V"), mtype.Vector>;
+  def : PatMStoreV<int_riscv_msbe_v, !cast<RVInst>("MSBE"#mtype.SEW#"_V"), mtype.Vector>;
+  def : PatMStoreV<int_riscv_msce_v, !cast<RVInst>("MSCE"#mtype.SEW#"_V"), mtype.Vector>;
 }
 
-class PatMMV<SDPatternOperator OpNode, RVInst Inst,  ValueType type_dest, ValueType type_src>
+class PatMMV_V_M<SDPatternOperator OpNode, RVInst Inst,  ValueType type_dest, ValueType type_src>
     : Pat<(type_dest (OpNode (type_src TRR:$tr1), GPR:$r2)),
           (type_dest (Inst (type_src TRR:$tr1), GPR:$r2))>;
 
+class PatMMV_M_V<SDPatternOperator OpNode, RVInst Inst,  ValueType type_dest, ValueType type_src>
+    : Pat<(type_dest (OpNode (type_src VR:$tr1), GPR:$r2)),
+          (type_dest (Inst (type_src VR:$tr1), GPR:$r2))>;
+
 foreach mti = AllMatrixs in {
-def : PatMMV<int_riscv_mmvar_v_m, MMVAR_V_M, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvbr_v_m, MMVBR_V_M, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvcr_v_m, MMVCR_V_M, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvar_m_v, MMVAR_M_V, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvbr_m_v, MMVBR_M_V, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvcr_m_v, MMVCR_M_V, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvac_v_m, MMVAC_V_M, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvbc_v_m, MMVBC_V_M, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvcc_v_m, MMVCC_V_M, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvac_m_v, MMVAC_M_V, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvbc_m_v, MMVBC_M_V, mti.Matrix, mti.Matrix>;
-def : PatMMV<int_riscv_mmvcc_m_v, MMVCC_M_V, mti.Matrix, mti.Matrix>;
+def : PatMMV_V_M<int_riscv_mmvar_v_m, MMVAR_V_M, mti.Vector, mti.Matrix>;
+def : PatMMV_V_M<int_riscv_mmvbr_v_m, MMVBR_V_M, mti.Vector, mti.Matrix>;
+def : PatMMV_V_M<int_riscv_mmvcr_v_m, MMVCR_V_M, mti.Vector, mti.Matrix>;
+def : PatMMV_M_V<int_riscv_mmvar_m_v, MMVAR_M_V, mti.Matrix, mti.Vector>;
+def : PatMMV_M_V<int_riscv_mmvbr_m_v, MMVBR_M_V, mti.Matrix, mti.Vector>;
+def : PatMMV_M_V<int_riscv_mmvcr_m_v, MMVCR_M_V, mti.Matrix, mti.Vector>;
+def : PatMMV_V_M<int_riscv_mmvac_v_m, MMVAC_V_M, mti.Vector, mti.Matrix>;
+def : PatMMV_V_M<int_riscv_mmvbc_v_m, MMVBC_V_M, mti.Vector, mti.Matrix>;
+def : PatMMV_V_M<int_riscv_mmvcc_v_m, MMVCC_V_M, mti.Vector, mti.Matrix>;
+def : PatMMV_M_V<int_riscv_mmvac_m_v, MMVAC_M_V, mti.Matrix, mti.Vector>;
+def : PatMMV_M_V<int_riscv_mmvbc_m_v, MMVBC_M_V, mti.Matrix, mti.Vector>;
+def : PatMMV_M_V<int_riscv_mmvcc_m_v, MMVCC_M_V, mti.Matrix, mti.Vector>;
 }
 
 // Zmic

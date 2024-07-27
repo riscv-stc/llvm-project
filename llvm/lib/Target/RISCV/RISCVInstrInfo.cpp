@@ -251,10 +251,14 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
 
   MachineFunction *MF = MBB.getParent();
   MachineFrameInfo &MFI = MF->getFrameInfo();
+  const RISCVInstrInfo *TII = MF->getSubtarget<RISCVSubtarget>().getInstrInfo();
+  MachineRegisterInfo &MRI = MF->getRegInfo();
 
   unsigned Opcode;
   bool IsScalableVector = true;
   bool IsZvlsseg = true;
+  int Matrix = -1;    //  -1 no matrix, 0-m1, 1-m2, 2-m4
+
   if (RISCV::GPRRegClass.hasSubClassEq(RC)) {
     Opcode = TRI->getRegSizeInBits(RISCV::GPRRegClass) == 32 ?
              RISCV::SW : RISCV::SD;
@@ -302,24 +306,48 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoVSPILL7_M1;
   else if (RISCV::VRN8M1RegClass.hasSubClassEq(RC))
     Opcode = RISCV::PseudoVSPILL8_M1;
-  else
+  else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::PseudoMSRE8_M_I8M1;
+    IsZvlsseg = false;
+    Matrix = 0;
+  } else if (RISCV::TRRM2RegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::PseudoMSRE8_M_I8M2;
+    IsZvlsseg = false;
+    Matrix = 1;
+  } else if (RISCV::TRRM4RegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::PseudoMSRE8_M_I8M4;
+    IsZvlsseg = false;
+    Matrix = 2;
+  } else
     llvm_unreachable("Can't store this register to stack slot");
 
   if (IsScalableVector) {
     MachineMemOperand *MMO = MF->getMachineMemOperand(
         MachinePointerInfo::getFixedStack(*MF, FI), MachineMemOperand::MOStore,
         MemoryLocation::UnknownSize, MFI.getObjectAlign(FI));
-
-    MFI.setStackID(FI, TargetStackID::ScalableVector);
-    auto MIB = BuildMI(MBB, I, DL, get(Opcode))
-                   .addReg(SrcReg, getKillRegState(IsKill))
-                   .addFrameIndex(FI)
-                   .addMemOperand(MMO);
-    if (IsZvlsseg) {
-      // For spilling/reloading Zvlsseg registers, append the dummy field for
-      // the scaled vector length. The argument will be used when expanding
-      // these pseudo instructions.
-      MIB.addReg(RISCV::X0);
+    if (Matrix == -1) {
+      MFI.setStackID(FI, TargetStackID::ScalableVector);
+      auto MIB = BuildMI(MBB, I, DL, get(Opcode))
+                     .addReg(SrcReg, getKillRegState(IsKill))
+                     .addFrameIndex(FI)
+                     .addMemOperand(MMO);
+      if (IsZvlsseg) {
+        // For spilling/reloading Zvlsseg registers, append the dummy field for
+        // the scaled vector length. The argument will be used when expanding
+        // these pseudo instructions.
+        MIB.addReg(RISCV::X0);
+      }
+    } else {
+      // this is matrix
+      MFI.setStackID(FI, TargetStackID::ScalableMatrix);
+      Register Stride = MRI.createVirtualRegister(&RISCV::GPRRegClass);
+      BuildMI(MBB, I, DL, TII->get(RISCV::PseudoReadMRLENB), Stride);
+      BuildMI(MBB, I, DL, get(Opcode))
+          .addReg(SrcReg, getKillRegState(IsKill))
+          .addFrameIndex(FI)
+          .addMemOperand(MMO)
+          .addReg(Stride, RegState::Kill) // stride
+          .addImm(Matrix);                // lmul
     }
   } else {
     MachineMemOperand *MMO = MF->getMachineMemOperand(
@@ -345,10 +373,14 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
 
   MachineFunction *MF = MBB.getParent();
   MachineFrameInfo &MFI = MF->getFrameInfo();
+  const RISCVInstrInfo *TII = MF->getSubtarget<RISCVSubtarget>().getInstrInfo();
+  MachineRegisterInfo &MRI = MF->getRegInfo();
 
   unsigned Opcode;
   bool IsScalableVector = true;
   bool IsZvlsseg = true;
+  int Matrix = -1;
+
   if (RISCV::GPRRegClass.hasSubClassEq(RC)) {
     Opcode = TRI->getRegSizeInBits(RISCV::GPRRegClass) == 32 ?
              RISCV::LW : RISCV::LD;
@@ -396,7 +428,19 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoVRELOAD7_M1;
   else if (RISCV::VRN8M1RegClass.hasSubClassEq(RC))
     Opcode = RISCV::PseudoVRELOAD8_M1;
-  else
+  else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::PseudoMLRE8_M_I8M1;
+    IsZvlsseg = false;
+    Matrix = 0;
+  } else if (RISCV::TRRM2RegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::PseudoMLRE8_M_I8M2;
+    IsZvlsseg = false;
+    Matrix = 1;
+  } else if (RISCV::TRRM4RegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::PseudoMLRE8_M_I8M4;
+    IsZvlsseg = false;
+    Matrix = 2;
+  } else
     llvm_unreachable("Can't load this register from stack slot");
 
   if (IsScalableVector) {
@@ -404,15 +448,27 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
         MachinePointerInfo::getFixedStack(*MF, FI), MachineMemOperand::MOLoad,
         MemoryLocation::UnknownSize, MFI.getObjectAlign(FI));
 
-    MFI.setStackID(FI, TargetStackID::ScalableVector);
-    auto MIB = BuildMI(MBB, I, DL, get(Opcode), DstReg)
-                   .addFrameIndex(FI)
-                   .addMemOperand(MMO);
-    if (IsZvlsseg) {
-      // For spilling/reloading Zvlsseg registers, append the dummy field for
-      // the scaled vector length. The argument will be used when expanding
-      // these pseudo instructions.
-      MIB.addReg(RISCV::X0);
+    if (Matrix == -1) {
+      MFI.setStackID(FI, TargetStackID::ScalableVector);
+      auto MIB = BuildMI(MBB, I, DL, get(Opcode), DstReg)
+                     .addFrameIndex(FI)
+                     .addMemOperand(MMO);
+      if (IsZvlsseg) {
+        // For spilling/reloading Zvlsseg registers, append the dummy field for
+        // the scaled vector length. The argument will be used when expanding
+        // these pseudo instructions.
+        MIB.addReg(RISCV::X0);
+      }
+    } else {
+      // this is matrix
+      MFI.setStackID(FI, TargetStackID::ScalableMatrix);
+      Register Stride = MRI.createVirtualRegister(&RISCV::GPRRegClass);
+      BuildMI(MBB, I, DL, TII->get(RISCV::PseudoReadMRLENB), Stride);
+      BuildMI(MBB, I, DL, get(Opcode), DstReg)
+          .addFrameIndex(FI)
+          .addMemOperand(MMO)
+          .addReg(Stride, RegState::Kill)
+          .addImm(Matrix);
     }
   } else {
     MachineMemOperand *MMO = MF->getMachineMemOperand(
@@ -1524,7 +1580,7 @@ Register RISCVInstrInfo::getVLENFactoredAmount(MachineFunction &MF,
                                                MachineBasicBlock::iterator II,
                                                const DebugLoc &DL,
                                                int64_t Amount,
-                                               MachineInstr::MIFlag Flag) const {
+                                               MachineInstr::MIFlag Flag, bool IsMatrix) const {
   assert(Amount > 0 && "There is no need to get VLEN scaled value.");
   assert(Amount % 8 == 0 &&
          "Reserve the stack by the multiple of one vector size.");
@@ -1532,9 +1588,10 @@ Register RISCVInstrInfo::getVLENFactoredAmount(MachineFunction &MF,
   MachineRegisterInfo &MRI = MF.getRegInfo();
   const RISCVInstrInfo *TII = MF.getSubtarget<RISCVSubtarget>().getInstrInfo();
   int64_t NumOfVReg = Amount / 8;
+  auto LenOpCode = IsMatrix ? RISCV::PseudoReadMLENB : RISCV::PseudoReadVLENB;
 
   Register VL = MRI.createVirtualRegister(&RISCV::GPRRegClass);
-  BuildMI(MBB, II, DL, TII->get(RISCV::PseudoReadVLENB), VL)
+  BuildMI(MBB, II, DL, TII->get(LenOpCode), VL)
     .setMIFlag(Flag);
   assert(isInt<32>(NumOfVReg) &&
          "Expect the number of vector registers within 32-bits.");
