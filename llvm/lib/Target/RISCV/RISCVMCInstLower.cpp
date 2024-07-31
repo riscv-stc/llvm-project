@@ -232,6 +232,18 @@ bool llvm::lowerRISCVMachineInstrToMCInst(const MachineInstr *MI, MCInst &OutMI,
     }
     break;
   }
+  case RISCV::PseudoReadMLENB:
+    OutMI.setOpcode(RISCV::CSRRS);
+    OutMI.addOperand(MCOperand::createImm(
+        RISCVSysReg::lookupSysRegByName("MLENB")->Encoding));
+    OutMI.addOperand(MCOperand::createReg(RISCV::X0));
+    break;
+  case RISCV::PseudoReadMRLENB:
+    OutMI.setOpcode(RISCV::CSRRS);
+    OutMI.addOperand(MCOperand::createImm(
+        RISCVSysReg::lookupSysRegByName("MRLENB")->Encoding));
+    OutMI.addOperand(MCOperand::createReg(RISCV::X0));
+    break;
   case RISCV::PseudoReadVLENB:
     OutMI.setOpcode(RISCV::CSRRS);
     OutMI.addOperand(MCOperand::createImm(

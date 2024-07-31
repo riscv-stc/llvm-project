@@ -20,7 +20,6 @@ void test_mfmv_s_f_mfloat16_m1(const _Float16 *in1, _Float16 *out, size_t a) {
     return;
 }
 
-
 // CHECK-IR-RV64-LABEL: @test_mfmv_s_f_mfloat32_m1(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast float* [[IN1:%.*]] to <vscale x 32 x float>*

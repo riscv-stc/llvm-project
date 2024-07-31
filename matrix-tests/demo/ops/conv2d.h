@@ -1,64 +1,63 @@
-#ifndef MATRIX_TESTS_DEMO_OPS_CONV2D_H_
-#define MATRIX_TESTS_DEMO_OPS_CONV2D_H_
+#ifndef _CONV2D_H_
+#define _CONV2D_H_
 
-#include "../tensor.h"
-#include "./config.h"
+#include "config.h"
+#include "tensor.h"
 #include <riscv_matrix.h>
-#include <stdio.h>
 
-void conv2d(Tensor *dist, Tensor *src1, Tensor *src2, Conv2dConfig cfg) {
-  const int M = cfg.out_shape[0] * cfg.out_shape[1];
-  const int K = cfg.kernel_size[0] * cfg.kernel_size[1] * cfg.in_shape[2];
-  const int N = cfg.out_shape[2];
+void conv2d(Tensor *dist, Tensor *src1, Tensor *src2, Conv2dConfig *cfg) {
+  float *src1_ptr = (float *)src1->data;
+  float *dist_ptr = (float *)dist->data;
+  float *src2_ptr = (float *)src2->data;
+  int sh = cfg->stride[0], sw = cfg->stride[1];
+  int dh = cfg->dilation[0], dw = cfg->dilation[1];
+  int pt = cfg->padding[0], pb = cfg->padding[1], pl = cfg->padding[2],
+      pr = cfg->padding[3];
+  int kh = cfg->kernel_size[0], kw = cfg->kernel_size[1];
+  int inh = src1->shape[1], inw = src1->shape[2], inc = src1->shape[3];
+  int outh = dist->shape[1], outw = dist->shape[2], outc = dist->shape[3];
+  const int M = outh * outw;
+  const int K = inc * kh * kw;
+  const int N = dist->shape[3];
   int tile_m, tile_k, tile_n;
-  msetoutsh(cfg.out_shape[0] << 16 | cfg.out_shape[1],
-            cfg.dilation[0] << 24 | cfg.dilation[1] << 16 | cfg.stride[0] << 8 |
-                cfg.stride[1]);
-  msetinsh(cfg.in_shape[0] << 16 | cfg.in_shape[1],
-           cfg.padding[0] << 24 | cfg.padding[1] << 16 | cfg.padding[2] << 8 |
-               cfg.padding[3]);
+  msettype(E32, M1, BA);
+  msetoutsh(outh << 16 | outw, dh << 24 | dw << 16 | sh << 8 | sw);
+  msetinsh(inh << 16 | inw, pt << 24 | pb << 16 | pl << 8 | pr);
+  msetpadval(0);
+
   for (int m = 0; m < M; m += tile_m) {
     tile_m = msettilem(M - m);
-    int hout_pos = m / cfg.out_shape[1];
-    int wout_pos = m % cfg.out_shape[1];
+    int outh_pos = m / outw;
+    int outw_pos = m % outw;
 
     for (int n = 0; n < N; n += tile_n) {
       tile_n = msettilen(N - n);
-      mfloat32m1_t acc =
-          mlce32_m1((float *)dist->data + m * cfg.out_shape[2] + n,
-                    cfg.out_shape[2] * sizeof(float));
+      mfloat32m1_t out;
+      out = mfsub_mm(out, out);
 
-      for (int kh = 0; kh < cfg.kernel_size[0]; kh++) {
-        int hin_pos =
-            hout_pos * cfg.stride[0] - cfg.padding[0] + kh * cfg.dilation[0];
+      for (int hi = 0; hi < kh; hi++) {
+        int inh_pos = outh_pos * sh - pt + hi * dh;
 
-        for (int kw = 0; kw < cfg.kernel_size[1]; kw++) {
-          int win_pos =
-              wout_pos * cfg.stride[1] - cfg.padding[1] + kw * cfg.dilation[1];
-          msetsk(hin_pos << 16 | win_pos,
-                 (kw * cfg.dilation[1]) << 16 | wout_pos);
-          float *fmap = (float *)src1->data +
-                        hin_pos * cfg.in_shape[1] * cfg.in_shape[2] +
-                        win_pos * cfg.in_shape[2];
+        for (int wi = 0; wi < kw; wi++) {
+          int inw_pos = outw_pos * sw - pl + wi * dw;
+          msetsk(inh_pos << 16 | (inw_pos & 0xFFFF),
+                 (wi * dw) << 16 | outw_pos);
+          float *fmap = src1_ptr + inh_pos * inw * inc + inw_pos * inc;
           float *weight =
-              (float *)src2->data +
-              kh * cfg.kernel_size[1] * cfg.in_shape[2] * cfg.out_shape[2] +
-              kw * cfg.in_shape[2] * cfg.out_shape[2] + n;
+              src2_ptr + hi * kw * inc * outc + wi * inc * outc + n;
 
-          for (int kc = 0; kc < cfg.in_shape[2]; kc += tile_k) {
-            tile_k = msettilek(cfg.in_shape[2] - kc);
-            mfloat32m1_t tr0 =
-                mlufae32_m(fmap + kc, cfg.in_shape[2] * sizeof(float));
-            mfloat32m1_t tr1 = mlbe32_m1(weight + kc * cfg.out_shape[2],
-                                         cfg.out_shape[2] * sizeof(float));
-            acc = mfma_mm(acc, tr0, tr1);
+          for (int ci = 0; ci < inc; ci += tile_k) {
+            tile_k = msettilek(inc - ci);
+            mfloat32m1_t tr0 = mlufae32_m(fmap + ci, inc * sizeof(float));
+            mfloat32m1_t tr1 =
+                mlbe32_m1(weight + ci * outc, outc * sizeof(float));
+            out = mfma_mm(out, tr0, tr1);
           }
         }
       }
-      msce32_m(acc, (float *)dist->data + m * cfg.out_shape[2] + n,
-               cfg.out_shape[2] * sizeof(float));
+      msce32_m(out, dist_ptr + m * N + n, N * sizeof(float));
     }
   }
 }
 
-#endif // MATRIX_TESTS_DEMO_OPS_CONV2D_H_
+#endif // _CONV2D_H_

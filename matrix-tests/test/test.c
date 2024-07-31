@@ -17,11 +17,11 @@ int main() {
         mint8m1_t m1 = mlce8_m1((const int8_t *)a, 3);
         mint8m1_t m2 = mlce8_m1((const int8_t *)b, 3);
         mint8m1_t mo = madd_mm(m1, m2);
-	msce8_m(mo, (int8_t *)c, 3);
+        msce8_m(mo, (int8_t *)c, 3);
 
-	for (int i = 0; i < 9; i++) {
-		printf("out: %d\n", c[i]);
-	}
+        for (int i = 0; i < 9; i++) {
+          printf("out: %d\n", c[i]);
+        }
 
-	return 0;
+        return 0;
 }

@@ -392,13 +392,23 @@ def : SysReg<"vlenb", 0xC22>;
 //===-----------------------------------------------
 // User Matrix CSRs
 //===-----------------------------------------------
-def : SysReg<"mtype", 0xC43>;
 def : SysReg<"tile_m", 0xC40>;
-def : SysReg<"tile_k", 0xC42>;
 def : SysReg<"tile_n", 0xC41>;
-def : SysReg<"moutsh", 0xC45>;
-def : SysReg<"minsh", 0xC46>;
-def : SysReg<"mpad",  0xC47>;
-def : SysReg<"mstdi", 0xC48>;
-def : SysReg<"minsk", 0xC49>;
-def : SysReg<"moutsk", 0xC50>;
+def : SysReg<"tile_k", 0xC42>;
+def : SysReg<"mtype", 0xC43>;
+def : SysReg<"mlenb", 0xC44>;
+def : SysReg<"mstart", 0xC45>;
+def : SysReg<"mcsr", 0xC46>;
+def : SysReg<"mrlenb",  0xC47>;
+
+def : SysReg<"moutsh", 0xC50>;
+def : SysReg<"minsh", 0xC51>;
+def : SysReg<"mpad", 0xC52>;
+def : SysReg<"mstdi", 0xC53>;
+def : SysReg<"minsk", 0xC54>;
+def : SysReg<"moutsk", 0xC55>;
+def : SysReg<"mpadval", 0xC56>;
+
+def : SysReg<"mxsat", 0xC60>;
+def : SysReg<"mxrm", 0xC61>;
+def : SysReg<"mfcsr", 0xC62>;

@@ -20,6 +20,12 @@ def riscv_vmv_x_s : SDNode<"RISCVISD::VMV_X_S",
 def riscv_read_vlenb : SDNode<"RISCVISD::READ_VLENB",
                               SDTypeProfile<1, 0, [SDTCisVT<0, XLenVT>]>>;
 
+def riscv_read_mlenb : SDNode<"RISCVISD::READ_MLENB",
+                              SDTypeProfile<1, 0, [SDTCisVT<0, XLenVT>]>>;
+
+def riscv_read_mrlenb : SDNode<"RISCVISD::READ_MRLENB",
+                              SDTypeProfile<1, 0, [SDTCisVT<0, XLenVT>]>>;
+
 // Operand that is allowed to be a register or a 5 bit immediate.
 // This allows us to pick between VSETIVLI and VSETVLI opcodes using the same
 // pseudo instructions.
@@ -3329,6 +3335,12 @@ let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in {
 let hasSideEffects = 0, mayLoad = 0, mayStore = 0, isCodeGenOnly = 1 in {
   def PseudoReadVLENB : Pseudo<(outs GPR:$rd), (ins),
                                [(set GPR:$rd, (riscv_read_vlenb))]>;
+
+  def PseudoReadMLENB : Pseudo<(outs GPR:$rd), (ins),
+                               [(set GPR:$rd, (riscv_read_mlenb))]>;
+
+  def PseudoReadMRLENB : Pseudo<(outs GPR:$rd), (ins),
+                                [(set GPR:$rd, (riscv_read_mrlenb))]>;
 }
 
 let hasSideEffects = 0, mayLoad = 0, mayStore = 0, isCodeGenOnly = 1,

@@ -199,7 +199,6 @@ void test_mfcvt_fw_xw_m_f64m2(const int64_t *in1,  double *out, size_t a) {
     return;
 }
 
-
 // CHECK-IR-RV64-LABEL: @test_mfncvt_fw_xq_m_f32m2(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast i64* [[IN1:%.*]] to <vscale x 64 x i64>*

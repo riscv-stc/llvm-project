@@ -37,6 +37,8 @@ private:
   /// Padding required to keep RVV stack aligned within the main stack.
   uint64_t RVVPadding = 0;
   /// Size of stack frame to save callee saved registers
+  /// Size of RVMatrix stack.
+  uint64_t RVMatrixStackSize = 0;
   unsigned CalleeSavedStackSize = 0;
 
 public:
@@ -68,6 +70,9 @@ public:
 
   uint64_t getRVVStackSize() const { return RVVStackSize; }
   void setRVVStackSize(uint64_t Size) { RVVStackSize = Size; }
+
+  uint64_t getRVMatrixStackSize() const { return RVMatrixStackSize; }
+  void setRVMatrixStackSize(uint64_t Size) { RVMatrixStackSize = Size; }
 
   uint64_t getRVVPadding() const { return RVVPadding; }
   void setRVVPadding(uint64_t Padding) { RVVPadding = Padding; }

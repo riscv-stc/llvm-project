@@ -201,6 +201,19 @@ void RISCVRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
         TII->getVLENFactoredAmount(MF, MBB, II, DL, ScalableValue);
   }
 
+  Register ScalableMatrixFactorRegister;
+  unsigned ScalableMatrixAdjOpc = RISCV::ADD;
+  if (Offset.getScalableMatrix()) {
+    int64_t ScalableValue = Offset.getScalableMatrix();
+    if (ScalableValue < 0) {
+      ScalableValue = -ScalableValue;
+      ScalableMatrixAdjOpc = RISCV::SUB;
+    }
+    // 1. Get vlenb && multiply vlen with the number of vector registers.
+    ScalableMatrixFactorRegister = TII->getVLENFactoredAmount(
+        MF, MBB, II, DL, ScalableValue, MachineInstr::NoFlags, true);
+  }
+
   if (!isInt<12>(Offset.getFixed())) {
     // The offset won't fit in an immediate, so use a scratch register instead
     // Modify Offset and FrameReg appropriately
@@ -221,8 +234,9 @@ void RISCVRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
     FrameRegIsKill = true;
   }
 
-  if (!Offset.getScalable()) {
-    // Offset = (fixed offset, 0)
+  // offset (fixed, vector, matrix)
+  if (!Offset.getScalable() && !Offset.getScalableMatrix()) {
+    // Offset = (fixed offset, 0, 0)
     MI.getOperand(FIOperandNum)
         .ChangeToRegister(FrameReg, false, false, FrameRegIsKill);
     if (!IsRVVSpill)
@@ -238,23 +252,41 @@ void RISCVRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
       }
     }
   } else {
-    // Offset = (fixed offset, scalable offset)
-    // Step 1, the scalable offset, has already been computed.
-    assert(ScalableFactorRegister &&
-           "Expected pre-computation of scalable factor in earlier step");
+    // Offset = (fixed offset, scalable offset, matrix)
+    Register VL = MRI.createVirtualRegister(&RISCV::GPRRegClass);
+    if (ScalableFactorRegister) {
+      // Calculate address: FrameReg + result of multiply
+      if (MI.getOpcode() == RISCV::ADDI && !Offset.getFixed() &&
+          !Offset.getScalableMatrix()) {
+        BuildMI(MBB, II, DL, TII->get(ScalableAdjOpc),
+                MI.getOperand(0).getReg())
+            .addReg(FrameReg, getKillRegState(FrameRegIsKill))
+            .addReg(ScalableFactorRegister, RegState::Kill);
+        MI.eraseFromParent();
+        return;
+      }
 
-    // 2. Calculate address: FrameReg + result of multiply
-    if (MI.getOpcode() == RISCV::ADDI && !Offset.getFixed()) {
-      BuildMI(MBB, II, DL, TII->get(ScalableAdjOpc), MI.getOperand(0).getReg())
+      BuildMI(MBB, II, DL, TII->get(ScalableAdjOpc), VL)
           .addReg(FrameReg, getKillRegState(FrameRegIsKill))
           .addReg(ScalableFactorRegister, RegState::Kill);
-      MI.eraseFromParent();
-      return;
     }
-    Register VL = MRI.createVirtualRegister(&RISCV::GPRRegClass);
-    BuildMI(MBB, II, DL, TII->get(ScalableAdjOpc), VL)
-        .addReg(FrameReg, getKillRegState(FrameRegIsKill))
-        .addReg(ScalableFactorRegister, RegState::Kill);
+
+    if (ScalableMatrixFactorRegister) {
+      // Calculate address: FrameReg + result of multiply
+      if (MI.getOpcode() == RISCV::ADDI && !Offset.getFixed() &&
+          !Offset.getScalable()) {
+        BuildMI(MBB, II, DL, TII->get(ScalableMatrixAdjOpc),
+                MI.getOperand(0).getReg())
+            .addReg(FrameReg, getKillRegState(FrameRegIsKill))
+            .addReg(ScalableMatrixFactorRegister, RegState::Kill);
+        MI.eraseFromParent();
+        return;
+      }
+
+      BuildMI(MBB, II, DL, TII->get(ScalableMatrixAdjOpc), VL)
+          .addReg(FrameReg, getKillRegState(FrameRegIsKill))
+          .addReg(ScalableMatrixFactorRegister, RegState::Kill);
+    }
 
     if (IsRVVSpill && Offset.getFixed()) {
       // Scalable load/store has no immediate argument. We need to add the
@@ -264,7 +296,7 @@ void RISCVRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
           .addImm(Offset.getFixed());
     }
 
-    // 3. Replace address register with calculated address register
+    // Replace address register with calculated address register
     MI.getOperand(FIOperandNum).ChangeToRegister(VL, false, false, true);
     if (!IsRVVSpill)
       MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset.getFixed());

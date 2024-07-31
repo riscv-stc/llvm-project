@@ -307,11 +307,10 @@ getNonLibcallCSI(const MachineFunction &MF,
   return NonLibcallCSI;
 }
 
-void RISCVFrameLowering::adjustStackForRVV(MachineFunction &MF,
-                                           MachineBasicBlock &MBB,
-                                           MachineBasicBlock::iterator MBBI,
-                                           const DebugLoc &DL, int64_t Amount,
-                                           MachineInstr::MIFlag Flag) const {
+void RISCVFrameLowering::adjustStackForRVVOrMatrix(
+    MachineFunction &MF, MachineBasicBlock &MBB,
+    MachineBasicBlock::iterator MBBI, const DebugLoc &DL, int64_t Amount,
+    MachineInstr::MIFlag Flag, bool IsMatrix) const {
   assert(Amount != 0 && "Did not need to adjust stack pointer for RVV.");
 
   const RISCVInstrInfo *TII = STI.getInstrInfo();
@@ -323,7 +322,7 @@ void RISCVFrameLowering::adjustStackForRVV(MachineFunction &MF,
   }
   // 1. Multiply the number of v-slots to the length of registers
   Register FactorRegister =
-      TII->getVLENFactoredAmount(MF, MBB, MBBI, DL, Amount, Flag);
+      TII->getVLENFactoredAmount(MF, MBB, MBBI, DL, Amount, Flag, IsMatrix);
   // 2. SP = SP - RVV stack size
   BuildMI(MBB, MBBI, DL, TII->get(Opc), SPReg)
       .addReg(SPReg)
@@ -393,9 +392,11 @@ void RISCVFrameLowering::emitPrologue(MachineFunction &MF,
   uint64_t StackSize = MFI.getStackSize() + RVFI->getRVVPadding();
   uint64_t RealStackSize = StackSize + RVFI->getLibCallStackSize();
   uint64_t RVVStackSize = RVFI->getRVVStackSize();
+  uint64_t RVMatrixStackSize = RVFI->getRVMatrixStackSize();
 
   // Early exit if there is no need to allocate on the stack
-  if (RealStackSize == 0 && !MFI.adjustsStack() && RVVStackSize == 0)
+  if (RealStackSize == 0 && !MFI.adjustsStack() && RVVStackSize == 0 &&
+      RVMatrixStackSize == 0)
     return;
 
   // If the stack pointer has been marked as reserved, then produce an error if
@@ -490,8 +491,12 @@ void RISCVFrameLowering::emitPrologue(MachineFunction &MF,
   }
 
   if (RVVStackSize)
-    adjustStackForRVV(MF, MBB, MBBI, DL, -RVVStackSize,
-                      MachineInstr::FrameSetup);
+    adjustStackForRVVOrMatrix(MF, MBB, MBBI, DL, -RVVStackSize,
+                              MachineInstr::FrameSetup);
+
+  if (RVMatrixStackSize)
+    adjustStackForRVVOrMatrix(MF, MBB, MBBI, DL, -RVMatrixStackSize,
+                              MachineInstr::FrameSetup, true);
 
   if (hasFP(MF)) {
     // Realign Stack
@@ -580,6 +585,7 @@ void RISCVFrameLowering::emitEpilogue(MachineFunction &MF,
   uint64_t RealStackSize = StackSize + RVFI->getLibCallStackSize();
   uint64_t FPOffset = RealStackSize - RVFI->getVarArgsSaveSize();
   uint64_t RVVStackSize = RVFI->getRVVStackSize();
+  uint64_t RVMatrixStackSize = RVFI->getRVMatrixStackSize();
 
   // Restore the stack pointer using the value of the frame pointer. Only
   // necessary if the stack pointer was modified, meaning the stack size is
@@ -590,8 +596,12 @@ void RISCVFrameLowering::emitEpilogue(MachineFunction &MF,
               MachineInstr::FrameDestroy);
   } else {
     if (RVVStackSize)
-      adjustStackForRVV(MF, MBB, LastFrameDestroy, DL, RVVStackSize,
-                        MachineInstr::FrameDestroy);
+      adjustStackForRVVOrMatrix(MF, MBB, LastFrameDestroy, DL, RVVStackSize,
+                                MachineInstr::FrameDestroy);
+    if (RVMatrixStackSize)
+      adjustStackForRVVOrMatrix(MF, MBB, LastFrameDestroy, DL,
+                                RVMatrixStackSize, MachineInstr::FrameDestroy,
+                                true);
   }
 
   uint64_t FirstSPAdjustAmount = getFirstSPAdjustAmount(MF);
@@ -631,7 +641,8 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
   auto StackID = MFI.getStackID(FI);
 
   assert((StackID == TargetStackID::Default ||
-          StackID == TargetStackID::ScalableVector) &&
+          StackID == TargetStackID::ScalableVector ||
+          StackID == TargetStackID::ScalableMatrix) &&
          "Unexpected stack ID for the frame object.");
   if (StackID == TargetStackID::Default) {
     Offset =
@@ -639,6 +650,8 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
                               MFI.getOffsetAdjustment());
   } else if (StackID == TargetStackID::ScalableVector) {
     Offset = StackOffset::getScalable(MFI.getObjectOffset(FI));
+  } else if (StackID == TargetStackID::ScalableMatrix) {
+    Offset = StackOffset::getScalableMatrix(MFI.getObjectOffset(FI));
   }
 
   uint64_t FirstSPAdjustAmount = getFirstSPAdjustAmount(MF);
@@ -720,6 +733,10 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
       Offset += StackOffset::get(
           alignTo(MFI.getStackSize() - RVFI->getCalleeSavedStackSize(), 8),
           RVFI->getRVVStackSize());
+    } else if (MFI.getStackID(FI) == TargetStackID::ScalableMatrix) {
+      Offset += StackOffset::get(
+          alignTo(MFI.getStackSize() - RVFI->getCalleeSavedStackSize(), 8),
+          RVFI->getRVVStackSize(), RVFI->getRVMatrixStackSize());
     }
   } else {
     FrameReg = RI->getFrameRegister(MF);
@@ -739,7 +756,8 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
       // |--------------------------|
       // | VarSize objects          |
       // |--------------------------| <-- SP
-      if (MFI.getStackID(FI) == TargetStackID::ScalableVector)
+      if (MFI.getStackID(FI) == TargetStackID::ScalableVector ||
+          MFI.getStackID(FI) == TargetStackID::ScalableMatrix)
         Offset -= StackOffset::getFixed(MFI.getStackSize());
     } else {
       // When using SP to access frame objects, we need to add RVV stack size.
@@ -767,8 +785,10 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
       // objects to 8 bytes.
       if (MFI.getStackID(FI) == TargetStackID::Default) {
         if (MFI.isFixedObjectIndex(FI)) {
-          Offset += StackOffset::get(MFI.getStackSize() + RVFI->getRVVPadding() 
-                        + RVFI->getLibCallStackSize(), RVFI->getRVVStackSize());
+          Offset += StackOffset::get(
+              MFI.getStackSize() + RVFI->getRVVPadding() +
+                  RVFI->getLibCallStackSize(),
+              RVFI->getRVVStackSize(), RVFI->getRVMatrixStackSize());
         } else {
           Offset += StackOffset::getFixed(MFI.getStackSize());
         }
@@ -776,6 +796,8 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
         Offset += StackOffset::get(
             alignTo(MFI.getStackSize() - RVFI->getCalleeSavedStackSize(), 8),
             RVFI->getRVVStackSize());
+      } else if (MFI.getStackID(FI) == TargetStackID::ScalableMatrix) {
+        Offset += StackOffset::get(0, 0, RVFI->getRVMatrixStackSize());
       }
     }
   }
@@ -828,14 +850,16 @@ void RISCVFrameLowering::determineCalleeSaves(MachineFunction &MF,
   }
 }
 
-int64_t
-RISCVFrameLowering::assignRVVStackObjectOffsets(MachineFrameInfo &MFI) const {
+int64_t RISCVFrameLowering::assignRVVStackObjectOffsets(MachineFrameInfo &MFI,
+                                                        bool IsMatrix) const {
   int64_t Offset = 0;
+  auto TargetID =
+      IsMatrix ? TargetStackID::ScalableMatrix : TargetStackID::ScalableVector;
   // Create a buffer of RVV objects to allocate.
   SmallVector<int, 8> ObjectsToAllocate;
   for (int I = 0, E = MFI.getObjectIndexEnd(); I != E; ++I) {
     unsigned StackID = MFI.getStackID(I);
-    if (StackID != TargetStackID::ScalableVector)
+    if (StackID != TargetID)
       continue;
     if (MFI.isDeadObjectIndex(I))
       continue;
@@ -879,6 +903,9 @@ void RISCVFrameLowering::processFunctionBeforeFrameFinalized(
 
   int64_t RVVStackSize = assignRVVStackObjectOffsets(MFI);
   RVFI->setRVVStackSize(RVVStackSize);
+  int64_t RVMatrixStackSize =
+      assignRVVStackObjectOffsets(MFI, true /*IsMatrix*/);
+  RVFI->setRVMatrixStackSize(RVMatrixStackSize);
   const RISCVInstrInfo &TII = *MF.getSubtarget<RISCVSubtarget>().getInstrInfo();
 
   // estimateStackSize has been observed to under-estimate the final stack
@@ -1137,6 +1164,7 @@ bool RISCVFrameLowering::isSupportedStackID(TargetStackID::Value ID) const {
   switch (ID) {
   case TargetStackID::Default:
   case TargetStackID::ScalableVector:
+  case TargetStackID::ScalableMatrix:
     return true;
   case TargetStackID::NoAlloc:
   case TargetStackID::SGPRSpill:

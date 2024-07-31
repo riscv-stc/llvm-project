@@ -124,7 +124,7 @@ public:
 class StackOffset;
 template <> struct LinearPolyBaseTypeTraits<StackOffset> {
   using ScalarTy = int64_t;
-  static constexpr unsigned Dimensions = 2;
+  static constexpr unsigned Dimensions = 3;
 };
 
 /// StackOffset is a class to represent an offset with 2 dimensions,
@@ -133,21 +133,26 @@ template <> struct LinearPolyBaseTypeTraits<StackOffset> {
 /// to represent stack offsets.
 class StackOffset : public LinearPolyBase<StackOffset> {
 protected:
-  StackOffset(ScalarTy Fixed, ScalarTy Scalable)
-      : LinearPolyBase<StackOffset>({Fixed, Scalable}) {}
+  StackOffset(ScalarTy Fixed, ScalarTy Scalable, ScalarTy ScalableMatrix)
+      : LinearPolyBase<StackOffset>({Fixed, Scalable, ScalableMatrix}) {}
 
 public:
-  StackOffset() : StackOffset({0, 0}) {}
+  StackOffset() : StackOffset({0, 0, 0}) {}
   StackOffset(const LinearPolyBase<StackOffset> &Other)
       : LinearPolyBase<StackOffset>(Other) {}
-  static StackOffset getFixed(ScalarTy Fixed) { return {Fixed, 0}; }
-  static StackOffset getScalable(ScalarTy Scalable) { return {0, Scalable}; }
-  static StackOffset get(ScalarTy Fixed, ScalarTy Scalable) {
-    return {Fixed, Scalable};
+  static StackOffset getFixed(ScalarTy Fixed) { return {Fixed, 0, 0}; }
+  static StackOffset getScalable(ScalarTy Scalable) { return {0, Scalable, 0}; }
+  static StackOffset getScalableMatrix(ScalarTy ScalableMatrix) {
+    return {0, 0, ScalableMatrix};
+  }
+  static StackOffset get(ScalarTy Fixed, ScalarTy Scalable,
+                         ScalarTy ScalableMatrix = 0) {
+    return {Fixed, Scalable, ScalableMatrix};
   }
 
   ScalarTy getFixed() const { return this->getValue(0); }
   ScalarTy getScalable() const { return this->getValue(1); }
+  ScalarTy getScalableMatrix() const { return this->getValue(2); }
 };
 
 //===----------------------------------------------------------------------===//
