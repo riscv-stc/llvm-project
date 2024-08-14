@@ -138,8 +138,8 @@ static int pass_cases = 0;
     type *casted_arr1 = (type *)(arr1);                                        \
     type *casted_arr2 = (type *)(arr2);                                        \
     for (i = 0; i < (len); ++i) {                                              \
-      if ((casted_arr1[i] - casted_arr2[i] > 1) ||                             \
-          (casted_arr1[i] - casted_arr2[i] < -1)) {                            \
+      if ((casted_arr1[i] - casted_arr2[i] > 1e-1) ||                          \
+          (casted_arr1[i] - casted_arr2[i] < -1e-1)) {                         \
         printf("%s:%d: %s FAIL! First differ at index %d: "                    \
                "expect: " format " actual: " format "\n",                      \
                __FILE__, __LINE__, (name), i, casted_arr1[i], casted_arr2[i]); \
