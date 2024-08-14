@@ -1,10 +1,10 @@
-#ifndef _ADD_RELU_H_
-#define _ADD_RELU_H_
+#ifndef _ADD_H_
+#define _ADD_H_
 
 #include "tensor.h"
 #include <riscv_matrix.h>
 
-void add_relu(Tensor *dist, Tensor *src1, Tensor *src2) {
+void add(Tensor *dist, Tensor *src1, Tensor *src2) {
   float *src1_ptr = (float *)src1->data;
   float *src2_ptr = (float *)src2->data;
   float *dist_ptr = (float *)dist->data;
@@ -25,4 +25,4 @@ void add_relu(Tensor *dist, Tensor *src1, Tensor *src2) {
   }
 }
 
-#endif // _ADD_RELU_H_
+#endif // _ADD_H_

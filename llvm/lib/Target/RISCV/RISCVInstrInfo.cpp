@@ -132,6 +132,7 @@ void RISCVInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
   // FPR->FPR copies and VR->VR copies.
   unsigned Opc;
   bool IsScalableVector = true;
+  bool IsMatrix = false;
   unsigned NF = 1;
   unsigned LMul = 1;
   unsigned SubRegIdx = RISCV::sub_vrm1_0;
@@ -207,12 +208,29 @@ void RISCVInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     SubRegIdx = RISCV::sub_vrm1_0;
     NF = 8;
     LMul = 1;
+  } else if (RISCV::TRRRegClass.contains(DstReg, SrcReg)) {
+    IsMatrix = true;
+    Opc = RISCV::PseudoMMAX_MM_I8M1;
+    LMul = 0;
+  } else if (RISCV::TRRM2RegClass.contains(DstReg, SrcReg)) {
+    IsMatrix = true;
+    Opc = RISCV::PseudoMMAX_MM_I8M2;
+    LMul = 1;
+  } else if (RISCV::TRRM4RegClass.contains(DstReg, SrcReg)) {
+    IsMatrix = true;
+    Opc = RISCV::PseudoMMAX_MM_I8M4;
+    LMul = 2;
   } else {
     llvm_unreachable("Impossible reg-to-reg copy");
   }
 
   if (IsScalableVector) {
-    if (NF == 1) {
+    if (IsMatrix) {
+      BuildMI(MBB, MBBI, DL, get(Opc), DstReg)
+          .addReg(SrcReg, getKillRegState(KillSrc))
+          .addReg(SrcReg, getKillRegState(KillSrc))
+          .addImm(LMul);
+    } else if (NF == 1) {
       BuildMI(MBB, MBBI, DL, get(Opc), DstReg)
           .addReg(SrcReg, getKillRegState(KillSrc));
     } else {

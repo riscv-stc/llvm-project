@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-RISCV_HOME=/home/chenbingzheng/WORKSPACE/OPEN/bin/riscv
-
+RISCV_HOME=$RISCV
 if [ "$#" -lt 1 ]; then
     echo "Usage: $0 <source_file.c>"
     exit 1

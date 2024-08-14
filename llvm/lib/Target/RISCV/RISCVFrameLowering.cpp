@@ -928,6 +928,11 @@ void RISCVFrameLowering::processFunctionBeforeFrameFinalized(
           RegInfo->getSpillSize(*RC), RegInfo->getSpillAlign(*RC), false);
       RS->addScavengingFrameIndex(RVVRegScavFI);
     }
+    if (RVMatrixStackSize != 0) {
+      int RVMatrixRegScavFI = MFI.CreateStackObject(
+          RegInfo->getSpillSize(*RC), RegInfo->getSpillAlign(*RC), false);
+      RS->addScavengingFrameIndex(RVMatrixRegScavFI);
+    }
   }
 
   if (MFI.getCalleeSavedInfo().empty() || RVFI->useSaveRestoreLibCalls(MF)) {

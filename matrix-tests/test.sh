@@ -13,10 +13,6 @@ fi
 
 for file in "$WORK_DIR/isa"/*.c; do
   filename=$(basename "$file")
-  if [[ "$filename" == "zmv.c" ]]; then
-    echo "Skipping $filename"
-    continue
-  fi
   echo "Compiling $filename..."
   "$COMPILE_SCRIPT" "$file"
   if [ $? -ne 0 ]; then
