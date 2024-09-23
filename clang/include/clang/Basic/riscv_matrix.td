@@ -69,7 +69,7 @@ class RISCVMatrixBuiltin<string suffix, string prototype, string type_range> {
 
   // This builtin is valid for the given LMULs.
   // m1, m2, m4
-  list<int> LMUL = [1, 2, 4];
+  list<int> LMUL = [1];
 
   // Manual code in clang codegen riscv_matrix_builtin_cg.inc
   code ManualCodegen = [{}];
@@ -89,91 +89,54 @@ class RISCVMatrixBuiltin<string suffix, string prototype, string type_range> {
   string HeaderCode = "";
 }
 
-class RVMatrixBinLMUL<string suffix, string prototype, string type_range>
-    : RISCVMatrixBuiltin<suffix, prototype, type_range> {
-  let HasLMUL = true;
-  let IntrinsicTypes = [-1, 2];
-}
-class RVMatrixSignedBinLMUL : RVMatrixBinLMUL<"v", "vvvz", "csil">;
-class RVMatrixUnsignedBinLMUL : RVMatrixBinLMUL<"Uv", "UvUvUvz", "csil">;
-class RVMatrixFloatBinLMUL : RVMatrixBinLMUL<"v", "vvvz", "xfd">;
-
-class RVMatrixWidenBinLMUL<string suffix, string prototype, string type_range>
-    : RISCVMatrixBuiltin<suffix, prototype, type_range> {
-  let HasLMUL = true;
-  let IntrinsicTypes = [-1, 1, 2];
-  let LMUL = [1, 2];
-}
-class RVMatrixSignedWidenBinLMUL : RVMatrixWidenBinLMUL<"w", "wvvz", "csi">;
-class RVMatrixUnsignedWidenBinLMUL : RVMatrixWidenBinLMUL<"Uw", "UwUvUvz", "csi">;
-class RVMatrixFloatWidenBinLMUL : RVMatrixWidenBinLMUL<"w", "wvvz", "xf">;
-
-class RVMatrixOut<string suffix, string prototype, string type_range>
+class RVMatrixBin<string suffix, string prototype, string type_range>
     : RISCVMatrixBuiltin<suffix, prototype, type_range> {
   let IntrinsicTypes = [-1];
 }
-class RVMatrixSignedTer : RVMatrixOut<"v", "vvvv", "csil">;
-class RVMatrixUnsignedTer : RVMatrixOut<"Uv", "UvUvUvUv", "csil">;
-class RVMatrixFloatTer : RVMatrixOut<"v", "vvvv", "xfd">;
 
-class RVMatrixWidenOutOp1<string suffix, string prototype, string type_range>
+class RVMatrixWidenBin<string suffix, string prototype, string type_range>
     : RISCVMatrixBuiltin<suffix, prototype, type_range> {
   let IntrinsicTypes = [-1, 1];
-  let LMUL = [1, 2];
 }
-class RVMatrixSignedWidenTer : RVMatrixWidenOutOp1<"w", "wwvv", "csi">;
-class RVMatrixUnsignedWidenTer : RVMatrixWidenOutOp1<"Uw", "UwUwUvUv", "csi">;
-class RVMatrixFloatWidenTer : RVMatrixWidenOutOp1<"w", "wwvv", "xf">;
-
-class RVMatrixQuadTer<string suffix, string prototype, string type_range>
-    : RISCVMatrixBuiltin<suffix, prototype, type_range> {
-  let IntrinsicTypes = [-1, 1];
-  let LMUL = [1];
-}
-class RVMatrixSignedQuadTer : RVMatrixQuadTer<"q", "qqvv", "cs">;
-class RVMatrixUnsignedQuadTer : RVMatrixQuadTer<"Uq", "UqUqUvUv", "cs">;
 
 class IsFloat<string type> {
   bit val = !or(!eq(type, "x"), !eq(type, "f"), !eq(type, "d"));
 }
 
-multiclass RVMatrixMLEBuiltin<list<string> types, string ir_name> {
+defvar TypeList = ["c","s","i","l","x","f","d"];
+multiclass RVMatrixMLoadBuiltin {
   let Name = NAME,
-      IRName = ir_name,
-      HasLMUL = true,
+      IRName = NAME,
       IsLoad = true,
       ManualCodegen = [{
       IntrinsicTypes = {ResultType, Ops[1]->getType()};
       Ops[0] = Builder.CreateBitCast(Ops[0], ResultType->getPointerTo());
       }] in {
-    foreach type = types in {
-      def : RISCVMatrixBuiltin<"v", "vPCezz", type>;
+    foreach type = TypeList in {
+      def : RISCVMatrixBuiltin<"v", "vPCez", type>;
       if !not(IsFloat<type>.val) then {
-        def : RISCVMatrixBuiltin<"Uv", "UvPCUezz", type>;
+        def : RISCVMatrixBuiltin<"Uv", "UvPCUez", type>;
       }
     }
   }
 }
 
-multiclass RVMatrixMSEBuiltin<list<string> types, string ir_name> {
+multiclass RVMatrixMStoreBuiltin {
   let Name = NAME,
-      IRName = ir_name,
-      HasLMUL = true,
+      IRName = NAME,
       ManualCodegen = [{
      Ops[1] = Builder.CreateBitCast(Ops[1], Ops[0]->getType()->getPointerTo());
      IntrinsicTypes = {Ops[0]->getType(), Ops[2]->getType()};
       }] in {
-    foreach type = types in {
-      def : RISCVMatrixBuiltin<"v", "0vPCezz", type>;
+    foreach type = TypeList in {
+      def : RISCVMatrixBuiltin<"v", "0vPCez", type>;
       if !not(IsFloat<type>.val) then {
-        def : RISCVMatrixBuiltin<"Uv", "0UvPCUezz", type>;
+        def : RISCVMatrixBuiltin<"Uv", "0UvPCUez", type>;
       }
     }
   }
 }
 
-
-defvar TypeList = ["c","s","i","l","x","f","d"];
 multiclass RVMatrixBCBuitin {
   let Name = NAME,
       IRName = NAME,
@@ -183,6 +146,17 @@ multiclass RVMatrixBCBuitin {
       if !not(IsFloat<type>.val) then {
         def : RISCVMatrixBuiltin<"Uv", "UvUv", type>;
       }
+    }
+  }
+}
+
+multiclass RVMatrixBitWiseBuitin<list<string> types> {
+  let Name = NAME,
+      IRName = NAME,
+      IntrinsicTypes = [-1] in {
+    foreach type = types in {
+      def : RISCVMatrixBuiltin<"v", "vvv", type>;
+      def : RISCVMatrixBuiltin<"Uv", "UvUvUv", type>;
     }
   }
 }
@@ -200,83 +174,75 @@ multiclass RVMatrixBuitinSet<string type_range, list<int> intrinsic_types,
   }
 }
 
+let IntrinsicTypes = [-1], HasSideEffects = true in {
+  def msettype   : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettypei  : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettypehi : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettilem  : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettilemi : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettilen  : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettileni : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettilek  : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettileki : RISCVMatrixBuiltin<"", "zz", "i">;
+
+  def msettspi   : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msettsp    : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msetdspi   : RISCVMatrixBuiltin<"", "zz", "i">;
+  def msetdsp    : RISCVMatrixBuiltin<"", "zz", "i">;
+
+  def msetoutsh  : RISCVMatrixBuiltin<"", "zzz", "i">;
+  def msetinsh   : RISCVMatrixBuiltin<"", "zzz", "i">;
+  def msetsk     : RISCVMatrixBuiltin<"", "zzz", "i">;
+  def msetpadval : RISCVMatrixBuiltin<"", "zz", "i">;
+}
+
+
 // 4.3. Load and Store Instructions
 // 4.3.1. Load Instructions
-defm mlae8_m : RVMatrixMLEBuiltin<["c"], "mlae_m">;
-defm mlae16_m : RVMatrixMLEBuiltin<["s","x"], "mlae_m">;
-defm mlae32_m : RVMatrixMLEBuiltin<["i","f"], "mlae_m">;
-defm mlae64_m : RVMatrixMLEBuiltin<["l","d"], "mlae_m">;
-defm mlbe8_m : RVMatrixMLEBuiltin<["c"], "mlbe_m">;
-defm mlbe16_m : RVMatrixMLEBuiltin<["s","x"], "mlbe_m">;
-defm mlbe32_m : RVMatrixMLEBuiltin<["i","f"], "mlbe_m">;
-defm mlbe64_m : RVMatrixMLEBuiltin<["l","d"], "mlbe_m">;
-defm mlce8_m : RVMatrixMLEBuiltin<["c"], "mlce_m">;
-defm mlce16_m : RVMatrixMLEBuiltin<["s","x"], "mlce_m">;
-defm mlce32_m : RVMatrixMLEBuiltin<["i","f"], "mlce_m">;
-defm mlce64_m : RVMatrixMLEBuiltin<["l","d"], "mlce_m">;
+defm mla_m   : RVMatrixMLoadBuiltin;
+defm mlb_m   : RVMatrixMLoadBuiltin;
+defm mlc_m   : RVMatrixMLoadBuiltin;
+defm mlat_m  : RVMatrixMLoadBuiltin;
+defm mlbt_m  : RVMatrixMLoadBuiltin;
+defm mlct_m  : RVMatrixMLoadBuiltin;
+defm mltr_m  : RVMatrixMLoadBuiltin;
+defm mlacc_m : RVMatrixMLoadBuiltin;
 
-defm mlate8_m : RVMatrixMLEBuiltin<["c"], "mlate_m">;
-defm mlate16_m : RVMatrixMLEBuiltin<["s","x"], "mlate_m">;
-defm mlate32_m : RVMatrixMLEBuiltin<["i","f"], "mlate_m">;
-defm mlate64_m : RVMatrixMLEBuiltin<["l","d"], "mlate_m">;
-defm mlbte8_m : RVMatrixMLEBuiltin<["c"], "mlbte_m">;
-defm mlbte16_m : RVMatrixMLEBuiltin<["s","x"], "mlbte_m">;
-defm mlbte32_m : RVMatrixMLEBuiltin<["i","f"], "mlbte_m">;
-defm mlbte64_m : RVMatrixMLEBuiltin<["l","d"], "mlbte_m">;
-defm mlcte8_m : RVMatrixMLEBuiltin<["c"], "mlcte_m">;
-defm mlcte16_m : RVMatrixMLEBuiltin<["s","x"], "mlcte_m">;
-defm mlcte32_m : RVMatrixMLEBuiltin<["i","f"], "mlcte_m">;
-defm mlcte64_m : RVMatrixMLEBuiltin<["l","d"], "mlcte_m">;
+defm mlufa_m : RVMatrixMLoadBuiltin;
+defm mlufb_m : RVMatrixMLoadBuiltin;
+defm mlufc_m : RVMatrixMLoadBuiltin;
 
 // 4.3.2. Store Instructions
-defm msae8_m : RVMatrixMSEBuiltin<["c"], "msae_m">;
-defm msae16_m : RVMatrixMSEBuiltin<["s","x"], "msae_m">;
-defm msae32_m : RVMatrixMSEBuiltin<["i","f"], "msae_m">;
-defm msae64_m : RVMatrixMSEBuiltin<["l","d"], "msae_m">;
-defm msbe8_m : RVMatrixMSEBuiltin<["c"], "msbe_m">;
-defm msbe16_m : RVMatrixMSEBuiltin<["s","x"], "msbe_m">;
-defm msbe32_m : RVMatrixMSEBuiltin<["i","f"], "msbe_m">;
-defm msbe64_m : RVMatrixMSEBuiltin<["l","d"], "msbe_m">;
-defm msce8_m : RVMatrixMSEBuiltin<["c"], "msce_m">;
-defm msce16_m : RVMatrixMSEBuiltin<["s","x"], "msce_m">;
-defm msce32_m : RVMatrixMSEBuiltin<["i","f"], "msce_m">;
-defm msce64_m : RVMatrixMSEBuiltin<["l","d"], "msce_m">;
+defm msa_m   : RVMatrixMStoreBuiltin;
+defm msb_m   : RVMatrixMStoreBuiltin;
+defm msc_m   : RVMatrixMStoreBuiltin;
+defm msat_m  : RVMatrixMStoreBuiltin;
+defm msbt_m  : RVMatrixMStoreBuiltin;
+defm msct_m  : RVMatrixMStoreBuiltin;
+defm mstr_m  : RVMatrixMStoreBuiltin;
+defm msacc_m : RVMatrixMStoreBuiltin;
 
-defm msate8_m : RVMatrixMSEBuiltin<["c"], "msate_m">;
-defm msate16_m : RVMatrixMSEBuiltin<["s","x"], "msate_m">;
-defm msate32_m : RVMatrixMSEBuiltin<["i","f"], "msate_m">;
-defm msate64_m : RVMatrixMSEBuiltin<["l","d"], "msate_m">;
-defm msbte8_m : RVMatrixMSEBuiltin<["c"], "msbte_m">;
-defm msbte16_m : RVMatrixMSEBuiltin<["s","x"], "msbte_m">;
-defm msbte32_m : RVMatrixMSEBuiltin<["i","f"], "msbte_m">;
-defm msbte64_m : RVMatrixMSEBuiltin<["l","d"], "msbte_m">;
-defm mscte8_m : RVMatrixMSEBuiltin<["c"], "mscte_m">;
-defm mscte16_m : RVMatrixMSEBuiltin<["s","x"], "mscte_m">;
-defm mscte32_m : RVMatrixMSEBuiltin<["i","f"], "mscte_m">;
-defm mscte64_m : RVMatrixMSEBuiltin<["l","d"], "mscte_m">;
-
-// 4.3.3. Whole Matrix Load & Store Instructions
-defm mlre8_m : RVMatrixMLEBuiltin<["c"], "mlre_m">;
-defm mlre16_m : RVMatrixMLEBuiltin<["s","x"], "mlre_m">;
-defm mlre32_m : RVMatrixMLEBuiltin<["i","f"], "mlre_m">;
-defm mlre64_m : RVMatrixMLEBuiltin<["l","d"], "mlre_m">;
-
-defm msre8_m : RVMatrixMSEBuiltin<["c"], "msre_m">;
-defm msre16_m : RVMatrixMSEBuiltin<["s","x"], "msre_m">;
-defm msre32_m : RVMatrixMSEBuiltin<["i","f"], "msre_m">;
-defm msre64_m : RVMatrixMSEBuiltin<["l","d"], "msre_m">;
+defm msfda_m : RVMatrixMStoreBuiltin;
+defm msfdb_m : RVMatrixMStoreBuiltin;
+defm msfdc_m : RVMatrixMStoreBuiltin;
 
 // 4.4. Data Move Instructions
-defm mmv_x_s : RVMatrixBuitinSet<"csil", [-1, 0, 1],
+defm mmv_x_a : RVMatrixBuitinSet<"csil", [-1, 0, 1],
                                  [["v","evz"], ["Uv","UeUvz"]]>;
-
-defm mmv_s_x : RVMatrixBuitinSet<"csil", [-1, 1, 2],
+defm mmv_a_x : RVMatrixBuitinSet<"csil", [-1, 1, 2],
                                  [["v","vvez"], ["Uv","UvUvUez"]]>;
-
-defm mfmv_f_s : RVMatrixBuitinSet<"xfd", [-1, 0, 1],
+defm mfmv_f_a : RVMatrixBuitinSet<"xfd", [-1, 0, 1],
                                  [["v","evz"]]>;
+defm mfmv_a_f : RVMatrixBuitinSet<"xfd", [-1, 1, 2],
+                                 [["v","vvez"]]>;
 
-defm mfmv_s_f : RVMatrixBuitinSet<"xfd", [-1, 1, 2],
+defm mmv_x_t : RVMatrixBuitinSet<"csil", [-1, 0, 1],
+                                 [["v","evz"], ["Uv","UeUvz"]]>;
+defm mmv_t_x : RVMatrixBuitinSet<"csil", [-1, 1, 2],
+                                 [["v","vvez"], ["Uv","UvUvUez"]]>;
+defm mfmv_f_t : RVMatrixBuitinSet<"xfd", [-1, 0, 1],
+                                 [["v","evz"]]>;
+defm mfmv_t_f : RVMatrixBuitinSet<"xfd", [-1, 1, 2],
                                  [["v","vvez"]]>;
 
 defm mbcar_m : RVMatrixBCBuitin;
@@ -289,282 +255,385 @@ defm mbcae_m : RVMatrixBCBuitin;
 defm mbcbe_m : RVMatrixBCBuitin;
 defm mbcce_m : RVMatrixBCBuitin;
 
-// 4.5.1. Matrix Multiplication Instructions
-def mmau_mm : RVMatrixUnsignedTer;
-def mwmau_mm : RVMatrixUnsignedWidenTer;
-def mqmau_mm : RVMatrixUnsignedQuadTer;
-def msmau_mm : RVMatrixUnsignedTer;
-def mswmau_mm : RVMatrixUnsignedWidenTer;
-def msqmau_mm : RVMatrixUnsignedQuadTer;
+// // 4.5.1. Matrix Multiplication Instructions
+def mmau_mm    : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def mmau_h_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def mmau_w_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def mmau_dw_mm : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mwmau_mm   : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mwmau_h_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mwmau_w_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def mqmau_mm   : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def mqmau_b_mm : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def msmau_mm    : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def msmau_h_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def msmau_w_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def msmau_dw_mm : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mswmau_mm   : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mswmau_h_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mswmau_w_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def msqmau_mm   : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def msqmau_b_mm : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def mma_mm    : RVMatrixBin<"v", "vvvv", "sil">;
+def mma_h_mm  : RVMatrixBin<"v", "vvvv", "s">;
+def mma_w_mm  : RVMatrixBin<"v", "vvvv", "i">;
+def mma_dw_mm : RVMatrixBin<"v", "vvvv", "l">;
+def mwma_mm   : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mwma_h_mm : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mwma_w_mm : RVMatrixWidenBin<"w", "wwvv", "i">;
+def mqma_mm   : RVMatrixWidenBin<"q", "qqvv", "c">;
+def mqma_b_mm : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msma_mm    : RVMatrixBin<"v", "vvvv", "sil">;
+def msma_h_mm  : RVMatrixBin<"v", "vvvv", "s">;
+def msma_w_mm  : RVMatrixBin<"v", "vvvv", "i">;
+def msma_dw_mm : RVMatrixBin<"v", "vvvv", "l">;
+def mswma_mm   : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mswma_h_mm : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mswma_w_mm : RVMatrixWidenBin<"w", "wwvv", "i">;
+def msqma_mm   : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msqma_b_mm : RVMatrixWidenBin<"q", "qqvv", "c">;
 
-def mma_mm : RVMatrixSignedTer;
-def mwma_mm : RVMatrixSignedWidenTer;
-def mqma_mm : RVMatrixSignedQuadTer;
-def msma_mm : RVMatrixSignedTer;
-def mswma_mm : RVMatrixSignedWidenTer;
-def msqma_mm : RVMatrixSignedQuadTer;
-
-def mfma_mm : RVMatrixFloatTer;
-def mfwma_mm : RVMatrixFloatWidenTer;
+def mfma_mm     : RVMatrixBin<"v", "vvvv", "xfd">;
+def mfma_hf_mm  : RVMatrixBin<"v", "vvvv", "x">;
+def mfma_f_mm   : RVMatrixBin<"v", "vvvv", "f">;
+def mfma_d_mm   : RVMatrixBin<"v", "vvvv", "d">;
+def mfwma_mm    : RVMatrixWidenBin<"w", "wwvv", "xf">;
+def mfwma_hf_mm : RVMatrixWidenBin<"w", "wwvv", "x">;
+def mfwma_f_mm  : RVMatrixWidenBin<"w", "wwvv", "f">;
 
 // 4.5.2 Element-Wise Add/Sub/Multiply Instructions
-def maddu_mm : RVMatrixUnsignedBinLMUL;
-def msaddu_mm : RVMatrixUnsignedBinLMUL;
-def mwaddu_mm : RVMatrixUnsignedWidenBinLMUL;
-def madd_mm : RVMatrixSignedBinLMUL;
-def msadd_mm : RVMatrixSignedBinLMUL;
-def mwadd_mm : RVMatrixSignedWidenBinLMUL;
-def msubu_mm : RVMatrixBinLMUL<"v", "vUvUvz", "csil">;
-def mssubu_mm : RVMatrixBinLMUL<"v", "vUvUvz", "csil">;
-def mwsubu_mm : RVMatrixWidenBinLMUL<"w", "wUvUvz", "csi">;
-def msub_mm : RVMatrixSignedBinLMUL;
-def mssub_mm : RVMatrixSignedBinLMUL;
-def mwsub_mm : RVMatrixSignedWidenBinLMUL;
-def mminu_mm : RVMatrixUnsignedBinLMUL;
-def mmin_mm : RVMatrixSignedBinLMUL;
-def mmaxu_mm :RVMatrixUnsignedBinLMUL;
-def mmax_mm : RVMatrixSignedBinLMUL;
-def mmul_mm : RVMatrixSignedBinLMUL;
-def mmulh_mm : RVMatrixSignedBinLMUL;
-def mmulhu_mm : RVMatrixUnsignedBinLMUL;
-def msmul_mm : RVMatrixSignedBinLMUL;
-def msmulu_mm : RVMatrixUnsignedBinLMUL;
-def mwmul_mm : RVMatrixSignedWidenBinLMUL;
-def mwmulu_mm : RVMatrixUnsignedWidenBinLMUL;
+def maddu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def maddu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def maddu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def maddu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def maddu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+def msaddu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def msaddu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def msaddu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def msaddu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def msaddu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+def mwaddu_mm   : RVMatrixWidenBin<"Uw", "UwUvUv", "csi">;
+def mwaddu_b_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "c">;
+def mwaddu_h_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "s">;
+def mwaddu_w_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "i">;
 
-let HasLMUL = true, IntrinsicTypes = [-1, 1, 2] in {
-def mmulhsu_mm : RISCVMatrixBuiltin<"v", "vvUvz", "csil">;
-def msmulsu_mm : RISCVMatrixBuiltin<"v", "vvUvz", "csil">;
-}
+def madd_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def madd_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def madd_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def madd_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def madd_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+def msadd_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def msadd_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def msadd_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def msadd_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def msadd_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+def mwadd_mm   : RVMatrixWidenBin<"w", "wvv", "csi">;
+def mwadd_b_mm : RVMatrixWidenBin<"w", "wvv", "c">;
+def mwadd_h_mm : RVMatrixWidenBin<"w", "wvv", "s">;
+def mwadd_w_mm : RVMatrixWidenBin<"w", "wvv", "i">;
 
-let HasLMUL = true, IntrinsicTypes = [-1, 0, 1, 2], LMUL = [1, 2] in {
-def mwmulsu_mm : RISCVMatrixBuiltin<"w", "wvUvz", "csi">;
-}
+def msubu_mm    : RVMatrixBin<"Uv", "vUvUv", "csil">;
+def msubu_b_mm  : RVMatrixBin<"Uv", "vUvUv", "c">;
+def msubu_h_mm  : RVMatrixBin<"Uv", "vUvUv", "s">;
+def msubu_w_mm  : RVMatrixBin<"Uv", "vUvUv", "i">;
+def msubu_dw_mm : RVMatrixBin<"Uv", "vUvUv", "l">;
+def mssubu_mm    : RVMatrixBin<"Uv", "vUvUv", "csil">;
+def mssubu_b_mm  : RVMatrixBin<"Uv", "vUvUv", "c">;
+def mssubu_h_mm  : RVMatrixBin<"Uv", "vUvUv", "s">;
+def mssubu_w_mm  : RVMatrixBin<"Uv", "vUvUv", "i">;
+def mssubu_dw_mm : RVMatrixBin<"Uv", "vUvUv", "l">;
+def mwsubu_mm   : RVMatrixWidenBin<"Uw", "wUvUv", "csi">;
+def mwsubu_b_mm : RVMatrixWidenBin<"Uw", "wUvUv", "c">;
+def mwsubu_h_mm : RVMatrixWidenBin<"Uw", "wUvUv", "s">;
+def mwsubu_w_mm : RVMatrixWidenBin<"Uw", "wUvUv", "i">;
+
+def msub_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def msub_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def msub_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def msub_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def msub_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+def mssub_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def mssub_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def mssub_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def mssub_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def mssub_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+def mwsub_mm   : RVMatrixWidenBin<"w", "wvv", "csi">;
+def mwsub_b_mm : RVMatrixWidenBin<"w", "wvv", "c">;
+def mwsub_h_mm : RVMatrixWidenBin<"w", "wvv", "s">;
+def mwsub_w_mm : RVMatrixWidenBin<"w", "wvv", "i">;
+
+def mminu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def mminu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def mminu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def mminu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def mminu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+def mmin_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def mmin_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def mmin_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def mmin_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def mmin_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+
+def mmaxu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def mmaxu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def mmaxu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def mmaxu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def mmaxu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+def mmax_mm     : RVMatrixBin<"v", "vvv", "csil">;
+def mmax_b_mm   : RVMatrixBin<"v", "vvv", "c">;
+def mmax_h_mm   : RVMatrixBin<"v", "vvv", "s">;
+def mmax_w_mm   : RVMatrixBin<"v", "vvv", "i">;
+def mmax_dw_mm  : RVMatrixBin<"v", "vvv", "l">;
+
+defm mand_mm : RVMatrixBitWiseBuitin<["c","s","i","l"]>;
+defm mor_mm  : RVMatrixBitWiseBuitin<["c","s","i","l"]>;
+defm mxor_mm : RVMatrixBitWiseBuitin<["c","s","i","l"]>;
+
+defm msll_mm    : RVMatrixBitWiseBuitin<["c","s","i","l"]>;
+defm msll_b_mm  : RVMatrixBitWiseBuitin<["c"]>;
+defm msll_h_mm  : RVMatrixBitWiseBuitin<["s"]>;
+defm msll_w_mm  : RVMatrixBitWiseBuitin<["i"]>;
+defm msll_dw_mm : RVMatrixBitWiseBuitin<["l"]>;
+
+defm msrl_mm    : RVMatrixBitWiseBuitin<["c","s","i","l"]>;
+defm msrl_b_mm  : RVMatrixBitWiseBuitin<["c"]>;
+defm msrl_h_mm  : RVMatrixBitWiseBuitin<["s"]>;
+defm msrl_w_mm  : RVMatrixBitWiseBuitin<["i"]>;
+defm msrl_dw_mm : RVMatrixBitWiseBuitin<["l"]>;
+
+defm msra_mm    : RVMatrixBitWiseBuitin<["c","s","i","l"]>;
+defm msra_b_mm  : RVMatrixBitWiseBuitin<["c"]>;
+defm msra_h_mm  : RVMatrixBitWiseBuitin<["s"]>;
+defm msra_w_mm  : RVMatrixBitWiseBuitin<["i"]>;
+defm msra_dw_mm : RVMatrixBitWiseBuitin<["l"]>;
+
+def mmul_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def mmul_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def mmul_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def mmul_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def mmul_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+
+def mmulh_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def mmulh_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def mmulh_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def mmulh_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def mmulh_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+
+def mmulhu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def mmulhu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def mmulhu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def mmulhu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def mmulhu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+
+def mmulhsu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def mmulhsu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def mmulhsu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def mmulhsu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def mmulhsu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+
+def msmul_mm    : RVMatrixBin<"v", "vvv", "csil">;
+def msmul_b_mm  : RVMatrixBin<"v", "vvv", "c">;
+def msmul_h_mm  : RVMatrixBin<"v", "vvv", "s">;
+def msmul_w_mm  : RVMatrixBin<"v", "vvv", "i">;
+def msmul_dw_mm : RVMatrixBin<"v", "vvv", "l">;
+
+def msmulu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def msmulu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def msmulu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def msmulu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def msmulu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+
+def msmulsu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
+def msmulsu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
+def msmulsu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
+def msmulsu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
+def msmulsu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+
+def mwmul_mm   : RVMatrixWidenBin<"w", "wvv", "csi">;
+def mwmul_b_mm : RVMatrixWidenBin<"w", "wvv", "c">;
+def mwmul_h_mm : RVMatrixWidenBin<"w", "wvv", "s">;
+def mwmul_w_mm : RVMatrixWidenBin<"w", "wvv", "i">;
+
+def mwmulu_mm   : RVMatrixWidenBin<"Uw", "UwUvUv", "csi">;
+def mwmulu_b_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "c">;
+def mwmulu_h_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "s">;
+def mwmulu_w_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "i">;
+
+def mwmulsu_mm   : RVMatrixWidenBin<"Uw", "UwUvUv", "csi">;
+def mwmulsu_b_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "c">;
+def mwmulsu_h_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "s">;
+def mwmulsu_w_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "i">;
 
 // Float matrix element-wise
-def mfadd_mm : RVMatrixFloatBinLMUL;
-def mfwadd_mm : RVMatrixFloatWidenBinLMUL;
-def mfsub_mm : RVMatrixFloatBinLMUL;
-def mfwsub_mm : RVMatrixFloatWidenBinLMUL;
-def mfmin_mm : RVMatrixFloatBinLMUL;
-def mfmax_mm : RVMatrixFloatBinLMUL;
-def mfmul_mm : RVMatrixFloatBinLMUL;
-def mfwmul_mm : RVMatrixFloatWidenBinLMUL;
-def mfdiv_mm : RVMatrixFloatBinLMUL;
+def mfadd_mm     : RVMatrixBin<"v", "vvv", "xfd">;
+def mfadd_hf_mm  : RVMatrixBin<"v", "vvv", "x">;
+def mfadd_f_mm   : RVMatrixBin<"v", "vvv", "f">;
+def mfadd_d_mm   : RVMatrixBin<"v", "vvv", "d">;
+def mfwadd_mm    : RVMatrixWidenBin<"w", "wvv", "xf">;
+def mfwadd_hf_mm : RVMatrixWidenBin<"w", "wvv", "x">;
+def mfwadd_f_mm  : RVMatrixWidenBin<"w", "wvv", "f">;
 
-let HasLMUL = true, IntrinsicTypes = [-1, 1] in {
-def mfsqrt_m : RISCVMatrixBuiltin<"v", "vvz", "xfd">;
-}
+def mfsub_mm     : RVMatrixBin<"v", "vvv", "xfd">;
+def mfsub_hf_mm  : RVMatrixBin<"v", "vvv", "x">;
+def mfsub_f_mm   : RVMatrixBin<"v", "vvv", "f">;
+def mfsub_d_mm   : RVMatrixBin<"v", "vvv", "d">;
+def mfwsub_mm    : RVMatrixWidenBin<"w", "wvv", "xf">;
+def mfwsub_hf_mm : RVMatrixWidenBin<"w", "wvv", "x">;
+def mfwsub_f_mm  : RVMatrixWidenBin<"w", "wvv", "f">;
+
+def mfmin_mm     : RVMatrixBin<"v", "vvv", "xfd">;
+def mfmin_hf_mm  : RVMatrixBin<"v", "vvv", "x">;
+def mfmin_f_mm   : RVMatrixBin<"v", "vvv", "f">;
+def mfmin_d_mm   : RVMatrixBin<"v", "vvv", "d">;
+
+def mfmax_mm     : RVMatrixBin<"v", "vvv", "xfd">;
+def mfmax_hf_mm  : RVMatrixBin<"v", "vvv", "x">;
+def mfmax_f_mm   : RVMatrixBin<"v", "vvv", "f">;
+def mfmax_d_mm   : RVMatrixBin<"v", "vvv", "d">;
+
+def mfmul_mm     : RVMatrixBin<"v", "vvv", "xfd">;
+def mfmul_hf_mm  : RVMatrixBin<"v", "vvv", "x">;
+def mfmul_f_mm   : RVMatrixBin<"v", "vvv", "f">;
+def mfmul_d_mm   : RVMatrixBin<"v", "vvv", "d">;
+def mfwmul_mm    : RVMatrixWidenBin<"w", "wvv", "xf">;
+def mfwmul_hf_mm : RVMatrixWidenBin<"w", "wvv", "x">;
+def mfwmul_f_mm  : RVMatrixWidenBin<"w", "wvv", "f">;
+
+def mfdiv_mm     : RVMatrixBin<"v", "vvv", "xfd">;
+def mfdiv_hf_mm  : RVMatrixBin<"v", "vvv", "x">;
+def mfdiv_f_mm   : RVMatrixBin<"v", "vvv", "f">;
+def mfdiv_d_mm   : RVMatrixBin<"v", "vvv", "d">;
+
+def mfsqrt_m    : RVMatrixBin<"v", "vv", "xfd">;
+def mfsqrt_hf_m : RVMatrixBin<"v", "vv", "x">;
+def mfsqrt_f_m  : RVMatrixBin<"v", "vv", "f">;
+def mfsqrt_d_m  : RVMatrixBin<"v", "vv", "d">;
 
 // 4.5.3. Type-Convert Instructions
-let HasLMUL = true, IntrinsicTypes = [-1, 0, 1] in {
+let IntrinsicTypes = [-1, 0] in {
+def mcvt_x_xu_m   : RISCVMatrixBuiltin<"v", "vUv", "csil">;
+def mcvt_b_ub_m   : RISCVMatrixBuiltin<"v", "vUv", "c">;
+def mcvt_h_uh_m   : RISCVMatrixBuiltin<"v", "vUv", "s">;
+def mcvt_w_uw_m   : RISCVMatrixBuiltin<"v", "vUv", "i">;
+def mcvt_dw_udw_m : RISCVMatrixBuiltin<"v", "vUv", "l">;
 
-let LMUL = [1, 2] in {
-def mfncvt_f_fw_m : RISCVMatrixBuiltin<"v", "vwz", "xf">;
-def mfwcvt_fw_f_m : RISCVMatrixBuiltin<"w", "wvz", "xf">;
+def mcvt_xu_x_m   : RISCVMatrixBuiltin<"Uv", "Uvv", "csil">;
+def mcvt_ub_b_m   : RISCVMatrixBuiltin<"Uv", "Uvv", "c">;
+def mcvt_uh_h_m   : RISCVMatrixBuiltin<"Uv", "Uvv", "s">;
+def mcvt_uw_w_m   : RISCVMatrixBuiltin<"Uv", "Uvv", "i">;
+def mcvt_udw_dw_m : RISCVMatrixBuiltin<"Uv", "Uvv", "l">;
 
-def mfncvt_f_xw_m : RISCVMatrixBuiltin<"Fv", "Fvwz", "si">;
-def mfwcvt_fw_x_m : RISCVMatrixBuiltin<"Fw", "Fwvz", "csi">;
-def mfcvt_fw_xw_m : RISCVMatrixBuiltin<"Fw", "Fwwz", "csi">;
+def mwcvtu_xw_x_m : RISCVMatrixBuiltin<"Uw", "UwUv", "csi">;
+def mwcvtu_h_b_m  : RISCVMatrixBuiltin<"Uw", "UwUv", "c">;
+def mwcvtu_w_h_m  : RISCVMatrixBuiltin<"Uw", "UwUv", "s">;
+def mwcvtu_dw_w_m : RISCVMatrixBuiltin<"Uw", "UwUv", "i">;
+def mwcvtu_xq_x_m : RISCVMatrixBuiltin<"Uq", "UqUv", "c">;
+def mwcvtu_w_b_m  : RISCVMatrixBuiltin<"Uq", "UqUv", "c">;
 
-def mfwcvt_xw_f_m : RISCVMatrixBuiltin<"Iw", "Iwvz", "xf">;
-def mfncvt_x_fw_m : RISCVMatrixBuiltin<"v", "vFwz", "csi">;
-def mfcvt_xw_fw_m : RISCVMatrixBuiltin<"Iw", "Iwwz", "xf">;
+def mwcvt_xw_x_m : RISCVMatrixBuiltin<"w", "wv", "csi">;
+def mwcvt_h_b_m  : RISCVMatrixBuiltin<"w", "wv", "c">;
+def mwcvt_w_h_m  : RISCVMatrixBuiltin<"w", "wv", "s">;
+def mwcvt_dw_w_m : RISCVMatrixBuiltin<"w", "wv", "i">;
+def mwcvt_xq_x_m : RISCVMatrixBuiltin<"q", "qv", "c">;
+def mwcvt_w_b_m  : RISCVMatrixBuiltin<"q", "qv", "c">;
 
+def mncvtu_x_xw_m : RISCVMatrixBuiltin<"Uv", "UvUw", "csi">;
+def mncvtu_b_h_m  : RISCVMatrixBuiltin<"Uv", "UvUw", "c">;
+def mncvtu_h_w_m  : RISCVMatrixBuiltin<"Uv", "UvUw", "s">;
+def mncvtu_w_dw_m : RISCVMatrixBuiltin<"Uv", "UvUw", "i">;
+def mncvtu_x_xq_m : RISCVMatrixBuiltin<"Uv", "UvUq", "c">;
+def mncvtu_b_w_m  : RISCVMatrixBuiltin<"Uv", "UvUq", "c">;
+
+def mncvt_x_xw_m : RISCVMatrixBuiltin<"v", "vw", "csi">;
+def mncvt_b_h_m  : RISCVMatrixBuiltin<"v", "vw", "c">;
+def mncvt_h_w_m  : RISCVMatrixBuiltin<"v", "vw", "s">;
+def mncvt_w_dw_m : RISCVMatrixBuiltin<"v", "vw", "i">;
+def mncvt_x_xq_m : RISCVMatrixBuiltin<"v", "vq", "c">;
+def mncvt_b_w_m  : RISCVMatrixBuiltin<"v", "vq", "c">;
+
+def mfwcvt_fw_f_m : RISCVMatrixBuiltin<"w", "wv", "xf">;
+def mfwcvt_f_hf_m : RISCVMatrixBuiltin<"w", "wv", "x">;
+def mfwcvt_d_f_m  : RISCVMatrixBuiltin<"w", "wv", "f">;
+
+def mfncvt_f_fw_m : RISCVMatrixBuiltin<"v", "vw", "xf">;
+def mfncvt_hf_f_m : RISCVMatrixBuiltin<"v", "vw", "x">;
+def mfncvt_f_d_m  : RISCVMatrixBuiltin<"v", "vw", "f">;
+
+// ===== i -> f
+def mfcvtu_f_x_m  : RISCVMatrixBuiltin<"Fv", "FvUv", "sil">;
+def mfcvtu_hf_h_m : RISCVMatrixBuiltin<"Fv", "FvUv", "s">;
+def mfcvtu_f_w_m  : RISCVMatrixBuiltin<"Fv", "FvUv", "i">;
+def mfcvtu_d_dw_m : RISCVMatrixBuiltin<"Fv", "FvUv", "l">;
+
+def mfcvt_f_x_m  : RISCVMatrixBuiltin<"Fv", "Fvv", "sil">;
+def mfcvt_hf_h_m : RISCVMatrixBuiltin<"Fv", "Fvv", "s">;
+def mfcvt_f_w_m  : RISCVMatrixBuiltin<"Fv", "Fvv", "i">;
+def mfcvt_d_dw_m : RISCVMatrixBuiltin<"Fv", "Fvv", "l">;
+
+def mfwcvtu_fw_x_m : RISCVMatrixBuiltin<"Fw", "FwUv", "csi">;
+def mfwcvtu_hf_b_m : RISCVMatrixBuiltin<"Fw", "FwUv", "c">;
+def mfwcvtu_f_h_m  : RISCVMatrixBuiltin<"Fw", "FwUv", "s">;
+def mfwcvtu_d_w_m  : RISCVMatrixBuiltin<"Fw", "FwUv", "i">;
+def mfwcvtu_fq_x_m : RISCVMatrixBuiltin<"Fq", "FqUv", "c">;
+def mfwcvtu_f_b_m  : RISCVMatrixBuiltin<"Fq", "FqUv", "c">;
+
+def mfwcvt_fw_x_m : RISCVMatrixBuiltin<"Fw", "Fwv", "csi">;
+def mfwcvt_hf_b_m : RISCVMatrixBuiltin<"Fw", "Fwv", "c">;
+def mfwcvt_f_h_m  : RISCVMatrixBuiltin<"Fw", "Fwv", "s">;
+def mfwcvt_d_w_m  : RISCVMatrixBuiltin<"Fw", "Fwv", "i">;
+def mfwcvt_fq_x_m : RISCVMatrixBuiltin<"Fq", "Fqv", "c">;
+def mfwcvt_f_b_m  : RISCVMatrixBuiltin<"Fq", "Fqv", "c">;
+
+def mfncvtu_f_xw_m : RISCVMatrixBuiltin<"Fv", "FvUw", "si">;
+def mfncvtu_hf_w_m : RISCVMatrixBuiltin<"Fv", "FvUw", "s">;
+def mfncvtu_f_dw_m : RISCVMatrixBuiltin<"Fv", "FvUw", "i">;
+
+def mfncvt_f_xw_m : RISCVMatrixBuiltin<"Fv", "Fvw", "si">;
+def mfncvt_hf_w_m : RISCVMatrixBuiltin<"Fv", "Fvw", "s">;
+def mfncvt_f_dw_m : RISCVMatrixBuiltin<"Fv", "Fvw", "i">;
+
+// ----- f -> i
+def mfcvtu_x_f_m  : RISCVMatrixBuiltin<"Uv", "Uvv", "xfd">;
+def mfcvtu_h_hf_m : RISCVMatrixBuiltin<"Uv", "Uvv", "x">;
+def mfcvtu_w_f_m  : RISCVMatrixBuiltin<"Uv", "Uvv", "f">;
+def mfcvtu_dw_d_m : RISCVMatrixBuiltin<"Uv", "Uvv", "d">;
+
+def mfcvt_x_f_m  : RISCVMatrixBuiltin<"Iv", "Ivv", "xfd">;
+def mfcvt_h_hf_m : RISCVMatrixBuiltin<"Iv", "Ivv", "x">;
+def mfcvt_w_f_m  : RISCVMatrixBuiltin<"Iv", "Ivv", "f">;
+def mfcvt_dw_d_m : RISCVMatrixBuiltin<"Iv", "Ivv", "d">;
+
+def mfwcvtu_xw_f_m : RISCVMatrixBuiltin<"Uw", "Uwv", "xf">;
+def mfwcvtu_w_hf_m : RISCVMatrixBuiltin<"Uw", "Uwv", "x">;
+def mfwcvtu_dw_f_m : RISCVMatrixBuiltin<"Uw", "Uwv", "f">;
+
+def mfwcvt_xw_f_m : RISCVMatrixBuiltin<"Iw", "Iwv", "xf">;
+def mfwcvt_w_hf_m : RISCVMatrixBuiltin<"Iw", "Iwv", "x">;
+def mfwcvt_dw_f_m : RISCVMatrixBuiltin<"Iw", "Iwv", "f">;
+
+def mfncvtu_x_fw_m : RISCVMatrixBuiltin<"Uv", "UvFw", "csi">;
+def mfncvtu_b_hf_m : RISCVMatrixBuiltin<"Uv", "UvFw", "c">;
+def mfncvtu_h_f_m  : RISCVMatrixBuiltin<"Uv", "UvFw", "s">;
+def mfncvtu_w_d_m  : RISCVMatrixBuiltin<"Uv", "UvFw", "i">;
+def mfncvtu_x_fq_m : RISCVMatrixBuiltin<"Uv", "UvFq", "c">;
+def mfncvtu_b_f_m  : RISCVMatrixBuiltin<"Uv", "UvFq", "c">;
+
+def mfncvt_x_fw_m : RISCVMatrixBuiltin<"v", "vFw", "csi">;
+def mfncvt_b_hf_m : RISCVMatrixBuiltin<"v", "vFw", "c">;
+def mfncvt_h_f_m  : RISCVMatrixBuiltin<"v", "vFw", "s">;
+def mfncvt_w_d_m  : RISCVMatrixBuiltin<"v", "vFw", "i">;
+def mfncvt_x_fq_m : RISCVMatrixBuiltin<"v", "vFq", "c">;
+def mfncvt_b_f_m  : RISCVMatrixBuiltin<"v", "vFq", "c">;
 }
 
-def mfcvt_f_x_m : RISCVMatrixBuiltin<"Fv", "Fvvz", "sil">;
-def mfcvt_x_f_m : RISCVMatrixBuiltin<"Iv", "Ivvz", "xfd">;
 
-let LMUL = [1] in {
-def mfncvt_f_xq_m : RISCVMatrixBuiltin<"Fv", "Fvqz", "s">;
-def mfncvt_fw_xq_m : RISCVMatrixBuiltin<"Fw", "Fwqz", "cs">;
-
-def mfwcvt_xq_f_m : RISCVMatrixBuiltin<"Iq", "Iqvz", "x">;
-def mfwcvt_xq_fw_m : RISCVMatrixBuiltin<"Iq", "Iqwz", "x">;
-}
-}
-
-let IntrinsicTypes = [-1], HasSideEffects = true, LMUL = [1] in {
-  let HeaderCode =
-[{
-enum MLMUL {
-    M1 = 0,
-    M2,
-    M4
-};
-enum MSEW {
-    E8 = 0,
-    E16,
-    E32,
-    E64
-};
-enum MBA {
-    BU = 0,
-    BA
-};
-enum MTYPE {
-    MFP64 = 1,
-    MBF16 = 2,
-    MTF32 = 4,
-    MFP8 = 8,
-    MINT4 = 16
-};
-
-__rvm_overloaded size_t msettype(enum MSEW e, enum MLMUL m, enum MBA b) {
-    size_t mtype = b;
-    mtype = (mtype << 3) + e;
-    mtype = (mtype << 2) + m;
-    return __builtin_riscv_msettypei(mtype);
-}
-
-__rvm_overloaded size_t msettype(enum MSEW e, enum MLMUL m, enum MBA b,
-                                 enum MTYPE t) {
-    size_t mtype = b;
-    mtype = (mtype << 3) + e;
-    mtype = (mtype << 2) + m;
-    mtype = (t << 6) + mtype;
-    return __builtin_riscv_msettypei(mtype);
-}
-
-__rvm_overloaded size_t msettype(enum MSEW e, enum MLMUL m, enum MBA b,
-                                 enum MTYPE t1, enum MTYPE t2) {
-    size_t mtype = b;
-    mtype = (mtype << 3) + e;
-    mtype = (mtype << 2) + m;
-    mtype = ((t1 + t2) << 6) + mtype;
-    return __builtin_riscv_msettypei(mtype);
-}
-
-__rvm_overloaded size_t msettype(enum MSEW e, enum MLMUL m, enum MBA b,
-                                 enum MTYPE t1, enum MTYPE t2, enum MTYPE t3) {
-    size_t mtype = b;
-    mtype = (mtype << 3) + e;
-    mtype = (mtype << 2) + m;
-    mtype = ((t1 + t2 + t3) << 6) + mtype;
-    return __builtin_riscv_msettypei(mtype);
-}
-
-__rvm_overloaded size_t msettype(enum MSEW e, enum MLMUL m, enum MBA b,
-                                 enum MTYPE t1, enum MTYPE t2, enum MTYPE t3,
-                                 enum MTYPE t4) {
-    size_t mtype = b;
-    mtype = (mtype << 3) + e;
-    mtype = (mtype << 2) + m;
-    mtype = ((t1 + t2 + t3 + t4) << 6) + mtype;
-    return __builtin_riscv_msettypei(mtype);
-}
-
-__rvm_overloaded size_t msettype(enum MSEW e, enum MLMUL m, enum MBA b,
-                                 enum MTYPE t1, enum MTYPE t2, enum MTYPE t3,
-                                 enum MTYPE t4, enum MTYPE t5) {
-    size_t mtype = b;
-    mtype = (mtype << 3) + e;
-    mtype = (mtype << 2) + m;
-    mtype = ((t1 + t2 + t3 + t4 + t5) << 6) + mtype;
-    return __builtin_riscv_msettypei(mtype);
-}
-
-}] in {
-  def msettype : RISCVMatrixBuiltin<"", "zz", "i">;
-}
-
-  def msettypei : RISCVMatrixBuiltin<"", "zz", "i">;
-  def msettilem : RISCVMatrixBuiltin<"", "zz", "i">;
-  def msettilemi : RISCVMatrixBuiltin<"", "zz", "i">;
-  def msettilen : RISCVMatrixBuiltin<"", "zz", "i">;
-  def msettileni : RISCVMatrixBuiltin<"", "zz", "i">;
-  def msettilek : RISCVMatrixBuiltin<"", "zz", "i">;
-  def msettileki : RISCVMatrixBuiltin<"", "zz", "i">;
-
-  let HeaderCode =
-[{
-__rvm_overloaded size_t msettile(uint8_t tilem, uint8_t tilen, uint8_t tilek) {
-    size_t tile = tilek;
-    tile = (tile << 8) + tilen;
-    tile = (tile << 8) + tilem;
-    return __builtin_riscv_msettile(tile);
-}
-
-}] in {
-  def msettile : RISCVMatrixBuiltin<"", "zz", "i">;
-}
-
-  def msetoutsh : RISCVMatrixBuiltin<"", "zzz", "i">;
-  def msetinsh : RISCVMatrixBuiltin<"", "zzz", "i">;
-  def msetsk : RISCVMatrixBuiltin<"", "zzz", "i">;
-  def msetpadval : RISCVMatrixBuiltin<"", "zz", "i">;
-}
-
-multiclass RVMatrixMLUFEBuiltin<list<string> types, string ir_name> {
+multiclass RVMatrixLoadVBuiltin {
   let Name = NAME,
-      IRName = ir_name,
-      LMUL = [1],
+      IRName = NAME,
       ManualCodegen = [{
       IntrinsicTypes = {ResultType, Ops[1]->getType()};
       Ops[0] = Builder.CreateBitCast(Ops[0], ResultType->getPointerTo());
       }] in {
-    foreach type = types in {
-      def : RISCVMatrixBuiltin<"v", "vPCez", type>;
-      if !not(IsFloat<type>.val) then {
-        def : RISCVMatrixBuiltin<"Uv", "UvPCUez", type>;
-      }
-    }
-  }
-}
-
-defm mlufae8_m : RVMatrixMLUFEBuiltin<["c"], "mlufae_m">;
-defm mlufae16_m : RVMatrixMLUFEBuiltin<["s","x"], "mlufae_m">;
-defm mlufae32_m : RVMatrixMLUFEBuiltin<["i","f"], "mlufae_m">;
-defm mlufae64_m : RVMatrixMLUFEBuiltin<["l","d"], "mlufae_m">;
-defm mlufbe8_m : RVMatrixMLUFEBuiltin<["c"], "mlufbe_m">;
-defm mlufbe16_m : RVMatrixMLUFEBuiltin<["s","x"], "mlufbe_m">;
-defm mlufbe32_m : RVMatrixMLUFEBuiltin<["i","f"], "mlufbe_m">;
-defm mlufbe64_m : RVMatrixMLUFEBuiltin<["l","d"], "mlufbe_m">;
-defm mlufce8_m : RVMatrixMLUFEBuiltin<["c"], "mlufce_m">;
-defm mlufce16_m : RVMatrixMLUFEBuiltin<["s","x"], "mlufce_m">;
-defm mlufce32_m : RVMatrixMLUFEBuiltin<["i","f"], "mlufce_m">;
-defm mlufce64_m : RVMatrixMLUFEBuiltin<["l","d"], "mlufce_m">;
-
-multiclass RVMatrixMSFDBuiltin<list<string> types, string ir_name> {
-  let Name = NAME,
-      IRName = ir_name,
-      LMUL = [1],
-      ManualCodegen = [{
-     Ops[1] = Builder.CreateBitCast(Ops[1], Ops[0]->getType()->getPointerTo());
-     IntrinsicTypes = {Ops[0]->getType(), Ops[2]->getType()};
-      }] in {
-    foreach type = types in {
-      def : RISCVMatrixBuiltin<"v", "0vPCez", type>;
-      if !not(IsFloat<type>.val) then {
-        def : RISCVMatrixBuiltin<"Uv", "0UvPCUez", type>;
-      }
-    }
-  }
-}
-
-defm msfdae8_m : RVMatrixMSFDBuiltin<["c"], "msfdae_m">;
-defm msfdae16_m : RVMatrixMSFDBuiltin<["s","x"], "msfdae_m">;
-defm msfdae32_m : RVMatrixMSFDBuiltin<["i","f"], "msfdae_m">;
-defm msfdae64_m : RVMatrixMSFDBuiltin<["l","d"], "msfdae_m">;
-defm msfdbe8_m : RVMatrixMSFDBuiltin<["c"], "msfdbe_m">;
-defm msfdbe16_m : RVMatrixMSFDBuiltin<["s","x"], "msfdbe_m">;
-defm msfdbe32_m : RVMatrixMSFDBuiltin<["i","f"], "msfdbe_m">;
-defm msfdbe64_m : RVMatrixMSFDBuiltin<["l","d"], "msfdbe_m">;
-defm msfdce8_m : RVMatrixMSFDBuiltin<["c"], "msfdce_m">;
-defm msfdce16_m : RVMatrixMSFDBuiltin<["s","x"], "msfdce_m">;
-defm msfdce32_m : RVMatrixMSFDBuiltin<["i","f"], "msfdce_m">;
-defm msfdce64_m : RVMatrixMSFDBuiltin<["l","d"], "msfdce_m">;
-
-multiclass RVMatrixLoadVBuiltin<list<string> types, string ir_name> {
-  let Name = NAME,
-      IRName = ir_name,
-      LMUL = [1],
-      ManualCodegen = [{
-      IntrinsicTypes = {ResultType, Ops[1]->getType()};
-      Ops[0] = Builder.CreateBitCast(Ops[0], ResultType->getPointerTo());
-      }] in {
-    foreach type = types in {
+    foreach type = TypeList in {
       def : RISCVMatrixBuiltin<"v", "aPCez", type>;
       if !not(IsFloat<type>.val) then {
         def : RISCVMatrixBuiltin<"Uv", "UaPCUez", type>;
@@ -573,28 +642,19 @@ multiclass RVMatrixLoadVBuiltin<list<string> types, string ir_name> {
   }
 }
 
-defm mlae8_v : RVMatrixLoadVBuiltin<["c"], "mlae_v">;
-defm mlae16_v : RVMatrixLoadVBuiltin<["s","x"], "mlae_v">;
-defm mlae32_v : RVMatrixLoadVBuiltin<["i","f"], "mlae_v">;
-defm mlae64_v : RVMatrixLoadVBuiltin<["l","d"], "mlae_v">;
-defm mlbe8_v : RVMatrixLoadVBuiltin<["c"], "mlbe_v">;
-defm mlbe16_v : RVMatrixLoadVBuiltin<["s","x"], "mlbe_v">;
-defm mlbe32_v : RVMatrixLoadVBuiltin<["i","f"], "mlbe_v">;
-defm mlbe64_v : RVMatrixLoadVBuiltin<["l","d"], "mlbe_v">;
-defm mlce8_v : RVMatrixLoadVBuiltin<["c"], "mlce_v">;
-defm mlce16_v : RVMatrixLoadVBuiltin<["s","x"], "mlce_v">;
-defm mlce32_v : RVMatrixLoadVBuiltin<["i","f"], "mlce_v">;
-defm mlce64_v : RVMatrixLoadVBuiltin<["l","d"], "mlce_v">;
+defm mla_v : RVMatrixLoadVBuiltin;
+defm mlb_v : RVMatrixLoadVBuiltin;
+defm mlc_v : RVMatrixLoadVBuiltin;
 
-multiclass RVMatrixStoreVBuiltin<list<string> types, string ir_name> {
+multiclass RVMatrixStoreVBuiltin {
   let Name = NAME,
-      IRName = ir_name,
+      IRName = NAME,
       LMUL = [1],
       ManualCodegen = [{
      Ops[1] = Builder.CreateBitCast(Ops[1], Ops[0]->getType()->getPointerTo());
      IntrinsicTypes = {Ops[0]->getType(), Ops[2]->getType()};
       }] in {
-    foreach type = types in {
+    foreach type = TypeList in {
       def : RISCVMatrixBuiltin<"v", "0aPCez", type>;
       if !not(IsFloat<type>.val) then {
         def : RISCVMatrixBuiltin<"Uv", "0UaPCUez", type>;
@@ -603,18 +663,9 @@ multiclass RVMatrixStoreVBuiltin<list<string> types, string ir_name> {
   }
 }
 
-defm msae8_v : RVMatrixStoreVBuiltin<["c"], "msae_v">;
-defm msae16_v : RVMatrixStoreVBuiltin<["s","x"], "msae_v">;
-defm msae32_v : RVMatrixStoreVBuiltin<["i","f"], "msae_v">;
-defm msae64_v : RVMatrixStoreVBuiltin<["l","d"], "msae_v">;
-defm msbe8_v : RVMatrixStoreVBuiltin<["c"], "msbe_v">;
-defm msbe16_v : RVMatrixStoreVBuiltin<["s","x"], "msbe_v">;
-defm msbe32_v : RVMatrixStoreVBuiltin<["i","f"], "msbe_v">;
-defm msbe64_v : RVMatrixStoreVBuiltin<["l","d"], "msbe_v">;
-defm msce8_v : RVMatrixStoreVBuiltin<["c"], "msce_v">;
-defm msce16_v : RVMatrixStoreVBuiltin<["s","x"], "msce_v">;
-defm msce32_v : RVMatrixStoreVBuiltin<["i","f"], "msce_v">;
-defm msce64_v : RVMatrixStoreVBuiltin<["l","d"], "msce_v">;
+defm msa_v : RVMatrixStoreVBuiltin;
+defm msb_v : RVMatrixStoreVBuiltin;
+defm msc_v : RVMatrixStoreVBuiltin;
 
 multiclass RVMatrixZVMBuitin {
   let Name = NAME,

@@ -18,9 +18,9 @@ uint8_t u8_buffer[200];
 uint16_t u16_buffer[200];
 uint32_t u32_buffer[200];
 uint64_t u64_buffer[200];
-fp16_t fp16_buffer[200];
-fp32_t fp32_buffer[200];
-fp64_t fp64_buffer[200];
+fp16_t f16_buffer[200];
+fp32_t f32_buffer[200];
+fp64_t f64_buffer[200];
 
 static int test_cases = 0;
 static int pass_cases = 0;
@@ -61,15 +61,15 @@ static int pass_cases = 0;
 #define EXCEPT_U64_SCALAR_EQ(except, actual, name)                             \
   EXCEPT_SCALAR_EQ_BASE((except) == (actual), (except), (actual), "%lu", name)
 
-#define EXCEPT_FP16_SCALAR_EQ(except, actual, name)                            \
+#define EXCEPT_F16_SCALAR_EQ(except, actual, name)                             \
   EXCEPT_SCALAR_EQ_BASE((fp16_t)(except) == (actual), (fp16_t)(except),        \
                         (fp16_t)(actual), "%f", name)
 
-#define EXCEPT_FP32_SCALAR_EQ(except, actual, name)                            \
+#define EXCEPT_F32_SCALAR_EQ(except, actual, name)                             \
   EXCEPT_SCALAR_EQ_BASE((fp32_t)(except) == (actual), (fp32_t)(except),        \
                         (fp32_t)(actual), "%f", name)
 
-#define EXCEPT_FP64_SCALAR_EQ(except, actual, name)                            \
+#define EXCEPT_F64_SCALAR_EQ(except, actual, name)                             \
   EXCEPT_SCALAR_EQ_BASE((fp64_t)(except) == (actual), (fp64_t)(except),        \
                         (fp64_t)(actual), "%f", name)
 
@@ -94,7 +94,6 @@ static int pass_cases = 0;
     }                                                                          \
     if (i == (len)) {                                                          \
       pass_cases++;                                                            \
-      printf("%s:%d: %s PASS!\n", __FILE__, __LINE__, (name));                 \
     }                                                                          \
   } while (0);
 
@@ -122,13 +121,13 @@ static int pass_cases = 0;
 #define EXCEPT_I64_ARRAY_EQ(arr1, arr2, len, name)                             \
   EXCEPT_ARRAY_EQ_BASE(arr1, arr2, len, int64_t, "%ld", name)
 
-#define EXCEPT_FP16_ARRAY_EQ(arr1, arr2, len, name)                            \
+#define EXCEPT_F16_ARRAY_EQ(arr1, arr2, len, name)                             \
   EXCEPT_ARRAY_EQ_BASE(arr1, arr2, len, fp16_t, "%f", name)
 
-#define EXCEPT_FP32_ARRAY_EQ(arr1, arr2, len, name)                            \
+#define EXCEPT_F32_ARRAY_EQ(arr1, arr2, len, name)                             \
   EXCEPT_ARRAY_EQ_BASE(arr1, arr2, len, fp32_t, "%f", name)
 
-#define EXCEPT_FP64_ARRAY_EQ(arr1, arr2, len, name)                            \
+#define EXCEPT_F64_ARRAY_EQ(arr1, arr2, len, name)                             \
   EXCEPT_ARRAY_EQ_BASE(arr1, arr2, len, fp64_t, "%f", name)
 
 #define EXCEPT_ARRAY_LAX_EQ_BASE(arr1, arr2, len, type, format, name)          \
@@ -148,7 +147,6 @@ static int pass_cases = 0;
     }                                                                          \
     if (i == (len)) {                                                          \
       pass_cases++;                                                            \
-      printf("%s:%d: %s PASS!\n", __FILE__, __LINE__, (name));                 \
     }                                                                          \
   } while (0);
 
@@ -170,5 +168,25 @@ static int pass_cases = 0;
       printf("\n");                                                            \
     }                                                                          \
   } while (0);
+
+#define CONFIGURATION_MTYPE(hi, li)                                            \
+  do {                                                                         \
+    msettypei((li));                                                           \
+    msettypehi((hi));                                                          \
+  } while (0);
+
+#define SET_MBA0_I8() CONFIGURATION_MTYPE(0x0, 0x10)
+
+#define SET_MBA0_I16() CONFIGURATION_MTYPE(0x0, 0x21)
+
+#define SET_MBA0_I32() CONFIGURATION_MTYPE(0x0, 0x42)
+
+#define SET_MBA0_I64() CONFIGURATION_MTYPE(0x0, 0x83)
+
+#define SET_MBA0_F16() CONFIGURATION_MTYPE(0x1, 0x1)
+
+#define SET_MBA0_F32() CONFIGURATION_MTYPE(0x4, 0x2)
+
+#define SET_MBA0_F64() CONFIGURATION_MTYPE(0x10, 0x3)
 
 #endif // !_MATRIX_TEST_UTILS_H_

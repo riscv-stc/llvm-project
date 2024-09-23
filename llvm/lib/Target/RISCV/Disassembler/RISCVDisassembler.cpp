@@ -183,13 +183,13 @@ static DecodeStatus DecodeTRRRegisterClass(MCInst &Inst, uint64_t RegNo,
   return MCDisassembler::Success;
 }
 
-static DecodeStatus DecodeTRRM2RegisterClass(MCInst &Inst, uint64_t RegNo,
-                                          uint64_t Address,
-                                          const void *Decoder) {
+static DecodeStatus DecodeACCRRegisterClass(MCInst &Inst, uint64_t RegNo,
+                                            uint64_t Address,
+                                            const void *Decoder) {
   if (RegNo >= 8)
     return MCDisassembler::Fail;
 
-  MCRegister Reg = RISCV::TR0 + RegNo;
+  MCRegister Reg = RISCV::ACC0 + RegNo;
   Inst.addOperand(MCOperand::createReg(Reg));
   return MCDisassembler::Success;
 }

@@ -132,11 +132,13 @@ enum NodeType : unsigned {
   VMV_S_X_VL,
   // VFMV_S_F_VL matches the semantics of vfmv.s.f. It carries a VL operand.
   VFMV_S_F_VL,
-  // MMV_S_X matches the semantics of mmv.s.x.
-  MMV_S_X,
-  // MMV_X_S matches the semantics of mmv.x.s. The result is always XLenVT sign
+  // MMV_T_X matches the semantics of mmv.s.x.
+  MMV_T_X,
+  MMV_A_X,
+  // MMV_X_T matches the semantics of mmv.x.s. The result is always XLenVT sign
   // extended from the vector element size.
-  MMV_X_S,
+  MMV_X_T,
+  MMV_X_A,
   // Splats an i64 scalar to a vector type (with element type i64) where the
   // scalar is a sign-extended i32.
   SPLAT_VECTOR_I64,

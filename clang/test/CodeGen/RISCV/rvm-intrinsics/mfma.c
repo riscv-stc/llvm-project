@@ -4,25 +4,77 @@
 
 #include <riscv_matrix.h>
 
-// CHECK-IR-RV64-LABEL: @test_mfma_float32m1(
+// CHECK-IR-RV64-LABEL: @test_mfma_float16(
 // CHECK-IR-RV64-NEXT:  entry:
-// CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast float* [[DEST:%.*]] to <vscale x 32 x float>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 32 x float> @llvm.riscv.mlae.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4:[0-9]+]]
-// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast float* [[IN1:%.*]] to <vscale x 32 x float>*
-// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 32 x float> @llvm.riscv.mlae.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP2]], i64 [[A]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = bitcast float* [[IN2:%.*]] to <vscale x 32 x float>*
-// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = call <vscale x 32 x float> @llvm.riscv.mlae.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP4]], i64 [[A]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 32 x float> @llvm.riscv.mfma.mm.nxv32f32(<vscale x 32 x float> [[TMP1]], <vscale x 32 x float> [[TMP3]], <vscale x 32 x float> [[TMP5]]) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = bitcast float* [[OUT:%.*]] to <vscale x 32 x float>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv32f32.i64(<vscale x 32 x float> [[TMP6]], <vscale x 32 x float>* [[TMP7]], i64 [[A]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast half* [[DEST:%.*]] to <vscale x 64 x half>*
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 64 x half> @llvm.riscv.mlc.m.nxv64f16.i64(<vscale x 64 x half>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4:[0-9]+]]
+// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast half* [[IN1:%.*]] to <vscale x 64 x half>*
+// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 64 x half> @llvm.riscv.mla.m.nxv64f16.i64(<vscale x 64 x half>* [[TMP2]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = bitcast half* [[IN2:%.*]] to <vscale x 64 x half>*
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = call <vscale x 64 x half> @llvm.riscv.mla.m.nxv64f16.i64(<vscale x 64 x half>* [[TMP4]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 64 x half> @llvm.riscv.mfma.mm.nxv64f16(<vscale x 64 x half> [[TMP1]], <vscale x 64 x half> [[TMP3]], <vscale x 64 x half> [[TMP5]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = call <vscale x 64 x half> @llvm.riscv.mfma.hf.mm.nxv64f16(<vscale x 64 x half> [[TMP6]], <vscale x 64 x half> [[TMP3]], <vscale x 64 x half> [[TMP5]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP8:%.*]] = bitcast half* [[DEST]] to <vscale x 64 x half>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv64f16.i64(<vscale x 64 x half> [[TMP7]], <vscale x 64 x half>* [[TMP8]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_mfma_float32m1(const float *dest, const float *in1,
-                      const float *in2, float *out, size_t a) {
-    mfloat32m1_t d_m = mlae32_m1(dest, a);
-    mfloat32m1_t m1 = mlae32_m1(in1, a);
-    mfloat32m1_t m2 = mlae32_m1(in2, a);
+void test_mfma_float16(_Float16 *dest, const _Float16 *in1,
+                       const _Float16 *in2, size_t a) {
+    mfloat16_t d_m = mlc_m(dest, a);
+    mfloat16_t m1 = mla_m(in1, a);
+    mfloat16_t m2 = mla_m(in2, a);
     d_m = mfma_mm(d_m, m1, m2);
-    msae32_m(d_m, out, a);
+    d_m = mfma_hf_mm(d_m, m1, m2);
+    msc_m(d_m, dest, a);
+    return;
+}
+
+// CHECK-IR-RV64-LABEL: @test_mfma_float32(
+// CHECK-IR-RV64-NEXT:  entry:
+// CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast float* [[DEST:%.*]] to <vscale x 32 x float>*
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 32 x float> @llvm.riscv.mlc.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast float* [[IN1:%.*]] to <vscale x 32 x float>*
+// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 32 x float> @llvm.riscv.mla.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP2]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = bitcast float* [[IN2:%.*]] to <vscale x 32 x float>*
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = call <vscale x 32 x float> @llvm.riscv.mla.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP4]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 32 x float> @llvm.riscv.mfma.mm.nxv32f32(<vscale x 32 x float> [[TMP1]], <vscale x 32 x float> [[TMP3]], <vscale x 32 x float> [[TMP5]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = call <vscale x 32 x float> @llvm.riscv.mfma.f.mm.nxv32f32(<vscale x 32 x float> [[TMP6]], <vscale x 32 x float> [[TMP3]], <vscale x 32 x float> [[TMP5]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP8:%.*]] = bitcast float* [[DEST]] to <vscale x 32 x float>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv32f32.i64(<vscale x 32 x float> [[TMP7]], <vscale x 32 x float>* [[TMP8]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    ret void
+//
+void test_mfma_float32(float *dest, const float *in1,
+                       const float *in2, size_t a) {
+    mfloat32_t d_m = mlc_m(dest, a);
+    mfloat32_t m1 = mla_m(in1, a);
+    mfloat32_t m2 = mla_m(in2, a);
+    d_m = mfma_mm(d_m, m1, m2);
+    d_m = mfma_f_mm(d_m, m1, m2);
+    msc_m(d_m, dest, a);
+    return;
+}
+
+// CHECK-IR-RV64-LABEL: @test_mfma_float64(
+// CHECK-IR-RV64-NEXT:  entry:
+// CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast double* [[DEST:%.*]] to <vscale x 16 x double>*
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 16 x double> @llvm.riscv.mlc.m.nxv16f64.i64(<vscale x 16 x double>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast double* [[IN1:%.*]] to <vscale x 16 x double>*
+// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 16 x double> @llvm.riscv.mla.m.nxv16f64.i64(<vscale x 16 x double>* [[TMP2]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = bitcast double* [[IN2:%.*]] to <vscale x 16 x double>*
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = call <vscale x 16 x double> @llvm.riscv.mla.m.nxv16f64.i64(<vscale x 16 x double>* [[TMP4]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 16 x double> @llvm.riscv.mfma.mm.nxv16f64(<vscale x 16 x double> [[TMP1]], <vscale x 16 x double> [[TMP3]], <vscale x 16 x double> [[TMP5]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = call <vscale x 16 x double> @llvm.riscv.mfma.d.mm.nxv16f64(<vscale x 16 x double> [[TMP6]], <vscale x 16 x double> [[TMP3]], <vscale x 16 x double> [[TMP5]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP8:%.*]] = bitcast double* [[DEST]] to <vscale x 16 x double>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv16f64.i64(<vscale x 16 x double> [[TMP7]], <vscale x 16 x double>* [[TMP8]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    ret void
+//
+void test_mfma_float64(double *dest, const double *in1,
+                       const double *in2, size_t a) {
+    mfloat64_t d_m = mlc_m(dest, a);
+    mfloat64_t m1 = mla_m(in1, a);
+    mfloat64_t m2 = mla_m(in2, a);
+    d_m = mfma_mm(d_m, m1, m2);
+    d_m = mfma_d_mm(d_m, m1, m2);
+    msc_m(d_m, dest, a);
     return;
 }

@@ -208,7 +208,7 @@ void RISCVInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     SubRegIdx = RISCV::sub_vrm1_0;
     NF = 8;
     LMul = 1;
-  } else if (RISCV::TRRRegClass.contains(DstReg, SrcReg)) {
+  } /*else if (RISCV::TRRRegClass.contains(DstReg, SrcReg)) {
     IsMatrix = true;
     Opc = RISCV::PseudoMMAX_MM_I8M1;
     LMul = 0;
@@ -220,7 +220,7 @@ void RISCVInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     IsMatrix = true;
     Opc = RISCV::PseudoMMAX_MM_I8M4;
     LMul = 2;
-  } else {
+  }*/ else {
     llvm_unreachable("Impossible reg-to-reg copy");
   }
 
@@ -324,7 +324,7 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoVSPILL7_M1;
   else if (RISCV::VRN8M1RegClass.hasSubClassEq(RC))
     Opcode = RISCV::PseudoVSPILL8_M1;
-  else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
+  /*else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
     Opcode = RISCV::PseudoMSRE8_M_I8M1;
     IsZvlsseg = false;
     Matrix = 0;
@@ -336,7 +336,7 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoMSRE8_M_I8M4;
     IsZvlsseg = false;
     Matrix = 2;
-  } else
+  }*/ else
     llvm_unreachable("Can't store this register to stack slot");
 
   if (IsScalableVector) {
@@ -446,7 +446,7 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoVRELOAD7_M1;
   else if (RISCV::VRN8M1RegClass.hasSubClassEq(RC))
     Opcode = RISCV::PseudoVRELOAD8_M1;
-  else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
+  /*else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
     Opcode = RISCV::PseudoMLRE8_M_I8M1;
     IsZvlsseg = false;
     Matrix = 0;
@@ -458,7 +458,7 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoMLRE8_M_I8M4;
     IsZvlsseg = false;
     Matrix = 2;
-  } else
+  } */else
     llvm_unreachable("Can't load this register from stack slot");
 
   if (IsScalableVector) {
@@ -988,6 +988,9 @@ bool RISCVInstrInfo::verifyInstruction(const MachineInstr &MI,
           break;
         case RISCVOp::OPERAND_UIMM5:
           Ok = isUInt<5>(Imm);
+          break;
+        case RISCVOp::OPERAND_UIMM10:
+          Ok = isUInt<10>(Imm);
           break;
         case RISCVOp::OPERAND_UIMM12:
           Ok = isUInt<12>(Imm);

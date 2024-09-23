@@ -185,6 +185,11 @@ void RISCVInstPrinter::printLMULTypeI(const MCInst *MI, unsigned OpNo,
   RISCVMType::printLUML(Imm, O);
 }
 
+void RISCVInstPrinter::printMFieldI(const MCInst *MI, unsigned OpNo,
+                                   const MCSubtargetInfo &STI, raw_ostream &O) {
+  unsigned Imm = MI->getOperand(OpNo).getImm();
+  RISCVMType::printMField(Imm, O);
+}
 
 void RISCVInstPrinter::printVMaskReg(const MCInst *MI, unsigned OpNo,
                                      const MCSubtargetInfo &STI,
