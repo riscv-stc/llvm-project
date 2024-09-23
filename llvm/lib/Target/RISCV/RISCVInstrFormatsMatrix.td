@@ -10,377 +10,163 @@
 //
 //===----------------------------------------------------------------------===//
 
-
-class RVInstSetMTypei<dag outs, dag ins, string opcodestr, string argstr>
+class RVInstConfig<bits<6> funct6, bits<3> funct3, dag outs, dag ins,
+                   string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
   bits<5> rd;
-  bits<13> mtypei;
-
-  let Inst{31-28} = 0b0000;
-  let Inst{27-15} = mtypei;
-  let Inst{14-12} = 0b111;
-  let Inst{11-7} = rd;
-  let Opcode = OPC_OP_M.Value;
-
-  let Defs = [MTYPE];
-}
-
-class RVInstSetMType<dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
   bits<5> rs1;
-  bits<5> rd;
+  bits<5> rs2;
+  bit im;
 
-  let Inst{31-28} = 0b0001;
-  let Inst{27-20} = 0b00000000;
+  let Inst{31-26} = funct6;
+  let Inst{25} = im;
+  let Inst{24-20} = rs2;
   let Inst{19-15} = rs1;
-  let Inst{14-12} = 0b111;
+  let Inst{14-12} = funct3;
   let Inst{11-7} = rd;
   let Opcode = OPC_OP_M.Value;
-
-  let Defs = [MTYPE];
 }
 
-class RVInstSetTilei<bits<4> funct4, dag outs, dag ins, string opcodestr, string argstr>
+class RVInstConfigImm<bits<6> funct6, bits<3> funct3, dag outs, dag ins,
+                      string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
   bits<5> rd;
-  bits<13> mleni;
+  bits<10> imm;
+  bit im;
 
-  let Inst{31-28} = funct4;
-  let Inst{27-15} = mleni;
-  let Inst{14-12} = 0b111;
+  let Inst{31-26} = funct6;
+  let Inst{25} = im;
+  let Inst{24-15} = imm;
+  let Inst{14-12} = funct3;
   let Inst{11-7} = rd;
   let Opcode = OPC_OP_M.Value;
-
-//  let Defs = [TILEM, TILEK, TILEN];
 }
 
-class RVInstSetTile<bits<4> funct4, dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
+class RVInstLoadStore<bits<6> funct6, bits<3> eew,
+                      dag outs, dag ins, string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> rs2;
+  bits<5> rs1;
+  bits<4> md;
+  bit tr;
+  bit ls;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = ls;
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = rs1;
+  let Inst{14-12} = eew;
+  let Inst{11} = tr;
+  let Inst{10-7} = md;
+  let Opcode = OPC_OP_M.Value;
+}
+
+class RVInstDataMove<bits<6> funct6, bits<3> eew,
+                     dag outs, dag ins, string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
+  bits<5> rs2;
   bits<5> rs1;
   bits<5> rd;
+  bit di;
 
-  let Inst{31-28} = funct4;
-  let Inst{27-20} = 0;
+  let Inst{31-26} = funct6;
+  let Inst{25} = di;
+  let Inst{24-20} = rs2;
   let Inst{19-15} = rs1;
-  let Inst{14-12} = 0b111;
+  let Inst{14-12} = eew;
   let Inst{11-7} = rd;
   let Opcode = OPC_OP_M.Value;
-
-//  let Defs = [TILEM, TILEK, TILEN];
 }
 
-class RVInstSetIm2col<bits<4> mit, dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
-  bits<5> rs1;
+class RVInstZmvLoadStore<bits<6> funct6, bits<3> eew,
+                      dag outs, dag ins, string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
   bits<5> rs2;
+  bits<5> rs1;
+  bits<5> md;
+  bit ls;
+
+  let Inst{31-26} = funct6;
+  let Inst{25} = ls;
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = rs1;
+  let Inst{14-12} = eew;
+  let Inst{11-7} = md;
+  let Opcode = OPC_OP_M.Value;
+}
+
+class RVInstZmvM2V<bits<6> funct6, bits<3> eew,
+                   dag outs, dag ins, string opcodestr, string argstr>
+    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
   bits<5> rd;
+  bits<4> rs1;
+  bit var;
+  bits<5> rs2;
+  bit di;
 
-  let Inst{31-28} = mit;
-  let Inst{27-25} = 0;
+  let Inst{31-26} = funct6;
+  let Inst{25} = di;
   let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = 0b111;
+  let Inst{19} = var;
+  let Inst{18-15} = rs1;
+  let Inst{14-12} = eew;
   let Inst{11-7} = rd;
   let Opcode = OPC_OP_M.Value;
-
-// let Defs = [MINSH, MOUTSH, MPAD, MSTDI, MINSK, MOUTSK];
 }
 
-class RVInstSetPadVal<bits<4> mit, dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
-  bits<5> rs1;
-  bits<5> rd;
-
-  let Inst{31-28} = mit;
-  let Inst{27-20} = 0;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = 0b111;
-  let Inst{11-7} = rd;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Defs = [MPADVAL];
-}
-
-class RVInstVL<bits<6> funct6, bits<3> width,
-                dag outs, dag ins, string opcodestr, string argstr>
+class RVInstZmvV2M<bits<6> funct6, bits<3> eew,
+                   dag outs, dag ins, string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
+  bits<4> rd;
+  bit var;
   bits<5> rs1;
-  bits<5> vd;
+  bits<5> rs2;
+  bit di;
 
   let Inst{31-26} = funct6;
-  let Inst{25} = 0;
+  let Inst{25} = di;
   let Inst{24-20} = rs2;
   let Inst{19-15} = rs1;
-  let Inst{14-12} = width;
-  let Inst{11-7} = vd;
+  let Inst{14-12} = eew;
+  let Inst{11} = var;
+  let Inst{10-7} = rd;
   let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }
 
-class RVInstMUL<bits<6> funct6, bits<3> width,
-                dag outs, dag ins, string opcodestr, string argstr>
+class RVInstMatrixMUL<bits<6> funct6, bits<3> eew, bit fp, bit sa, bit sn, bit ma,
+                      dag outs, dag ins, string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rs1;
-  bits<5> td;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 0;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = width;
-  let Inst{11-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstVS<bits<6> funct6, bits<3> width,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rs1;
-  bits<5> vs3;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 1; // store
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = width;
-  let Inst{11-7} = vs3;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMUS<bits<6> funct6, bits<3> width,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rs1;
-  bits<5> ts3;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 1; // store
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = width;
-  let Inst{11-7} = ts3;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstML<bits<6> funct6, bits<3> width,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rs1;
-  bits<2> lmul;
-  bits<3> td;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 0;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = width;
-  let Inst{11-10} = lmul;
-  let Inst{9-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMS<bits<6> funct6, bits<3> width,
-                dag outs, dag ins, string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rs1;
-  bits<2> lmul;
-  bits<3> ts3;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 1; // store
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = width;
-  let Inst{11-10} = lmul;
-  let Inst{9-7} = ts3;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMM<bits<6> funct6, bit fp, bit sn, bit sa, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> ts2;
-  bits<3> ts1;
-  bits<3> td;
+  bits<4> ms2;
+  bits<4> ms1;
+  bits<4> md;
 
   let Inst{31-26} = funct6;
   let Inst{25} = fp;
-  let Inst{24-20} = ts2;
+  let Inst{24} = sa;
+  let Inst{23-20} = ms2;
   let Inst{19} = sn;
-  let Inst{18} = sa;
-  let Inst{17-15} = ts1;
-  let Inst{14-12} = 0b110;
-  let Inst{11-10} = 0b00;
-  let Inst{9-7} = td;
+  let Inst{18-15} = ms1;
+  let Inst{14-12} = eew;
+  let Inst{11} = ma;
+  let Inst{10-7} = md;
   let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }
 
-class RVInstMMI<bits<6> funct6, bit fp, bit sn, bit sa, dag outs, dag ins,
-               string opcodestr, string argstr>
+class RVInstMatrixTypeCvt<bits<6> funct6, bits<3> eew, bit fd, bits<3> f3,
+                      bits<2> nw, bit sn, bit ma, dag outs, dag ins,
+                      string opcodestr, string argstr>
     : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> ts2;
-  bits<3> ts1;
-  bits<3> td;
-  bits<2> lmul;
+  bits<4> ms1;
+  bits<4> md;
 
   let Inst{31-26} = funct6;
-  let Inst{25} = fp;
-  let Inst{24-20} = ts2;
+  let Inst{25} = fd;
+  let Inst{24-22} = f3;
+  let Inst{21-20} = nw;
   let Inst{19} = sn;
-  let Inst{18} = sa;
-  let Inst{17-15} = ts1;
-  let Inst{14-12} = 0b110;
-  let Inst{11-10} = lmul;
-  let Inst{9-7} = td;
+  let Inst{18-15} = ms1;
+  let Inst{14-12} = eew;
+  let Inst{11} = ma;
+  let Inst{10-7} = md;
   let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMMI_UNARY<bits<6> funct6, bit fp, bit sn, bit sa, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<3> ts1;
-  bits<3> td;
-  bits<2> lmul;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = fp;
-  let Inst{24-20} = 0b00000;
-  let Inst{19} = sn;
-  let Inst{18} = sa;
-  let Inst{17-15} = ts1;
-  let Inst{14-12} = 0b110;
-  let Inst{11-10} = lmul;
-  let Inst{9-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMCVTI<bits<6> funct6, bit fdst, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> ts1;
-  bits<3> td;
-  bits<2> lmul;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = fdst;
-  let Inst{24-20} = 0b00000;
-  let Inst{19-15} = ts1;
-  let Inst{14-12} = 0b110;
-  let Inst{11-10} = lmul;
-  let Inst{9-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMOVT2V<bits<6> funct6, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> td;
-  bits<5> vd;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 0;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = td;
-  let Inst{14-12} = 0b101;
-  let Inst{11-7} = vd;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMOVV2T<bits<6> funct6, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> vs1;
-  bits<5> rs2;
-  bits<5> td;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 1;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = vs1;
-  let Inst{14-12} = 0b101;
-  let Inst{11-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMOVT2G<bits<6> funct6, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rd;
-  bits<5> td;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 0;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = td;
-  let Inst{14-12} = 0b101;
-  let Inst{11-7} = rd;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMOVG2T<bits<6> funct6, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> rs2;
-  bits<5> rs1;
-  bits<5> td;
-
-  let Inst{31-26} = funct6;
-  let Inst{25} = 1;
-  let Inst{24-20} = rs2;
-  let Inst{19-15} = rs1;
-  let Inst{14-12} = 0b101;
-  let Inst{11-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
-}
-
-class RVInstMOVBR2T<bits<5> funct5, dag outs, dag ins,
-               string opcodestr, string argstr>
-    : RVInst<outs, ins, opcodestr, argstr, [], InstFormatR> {
-  bits<5> ts1;
-  bits<5> td;
-
-  let Inst{31-26} = 0b000010;
-  let Inst{25} = 0;
-  let Inst{24-20} = funct5;
-  let Inst{19-15} = ts1;
-  let Inst{14-12} = 0b101;
-  let Inst{11-7} = td;
-  let Opcode = OPC_OP_M.Value;
-
-//  let Uses = [MTYPE, TILEM, TILEK, TILEN];
 }

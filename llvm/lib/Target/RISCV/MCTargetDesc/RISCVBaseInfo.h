@@ -186,6 +186,7 @@ enum OperandType : unsigned {
   OPERAND_UIMM4,
   OPERAND_UIMM5,
   OPERAND_UIMM7,
+  OPERAND_UIMM10,
   OPERAND_UIMM12,
   OPERAND_UIMM13,
   OPERAND_SIMM12,
@@ -433,6 +434,8 @@ inline static bool isMatrixAgnostic(unsigned MType) { return MType & 0x20; }
 void printMType(unsigned MType, raw_ostream &OS);
 
 void printLUML(unsigned LMUL, raw_ostream &OS);
+
+void printMField(unsigned MField, raw_ostream &OS);
 
 } // namespace RISCVMType
 

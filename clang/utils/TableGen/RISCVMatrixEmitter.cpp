@@ -77,7 +77,7 @@ public:
     return isFloat() && ElementBitwidth == Width;
   }
   // Get LMUL number in parameter
-  int getLMULParam();
+  // int getLMULParam();
   int getLMUL() const { return LMUL; }
 
 private:
@@ -223,15 +223,11 @@ void RVMatrixIntrinsic::emitCodeGenSwitchBody(raw_ostream &OS) const {
 void RVMatrixIntrinsic::emitMangledFuncDef(raw_ostream &OS) const {
   OS << "__rvm_overloaded"
      << " " << OutputType->getTypeStr() << " " << getName();
-  if (isLoad())
-    OS << OutputType->getLMUL();
+
   OS << "(";
-  int subLMUL = 0;
-  if (hasLMUL())
-    subLMUL = 1;
   if (!InputTypes.empty()) {
     ListSeparator LS;
-    for (unsigned i = 0; i < InputTypes.size() - subLMUL; ++i) {
+    for (unsigned i = 0; i < InputTypes.size(); ++i) {
       OS << LS << InputTypes[i]->getTypeStr() << " op" << i;
     }
   }
@@ -241,11 +237,10 @@ void RVMatrixIntrinsic::emitMangledFuncDef(raw_ostream &OS) const {
   OS << "(";
   if (!InputTypes.empty()) {
     ListSeparator LS;
-    for (unsigned i = 0; i < InputTypes.size() - subLMUL; ++i)
+    for (unsigned i = 0; i < InputTypes.size(); ++i)
       OS << LS << "op" << i;
   }
-  if (hasLMUL())
-    OS << ", " << InputTypes[0]->getLMULParam();
+
   OS << ");\n}\n";
 }
 
@@ -268,12 +263,12 @@ void RVMatrixType::applyModifier(StringRef Transformer) {
     break;
   case 'w':
     ElementBitwidth *= 2;
-    LMUL *= 2;
+//    LMUL *= 2;
     Scale = LMUL * (64 / ElementBitwidth);
     break;
   case 'q':
     ElementBitwidth *= 4;
-    LMUL *= 4;
+//    LMUL *= 4;
     Scale = LMUL * (64 / ElementBitwidth);
     break;
   case '0':
@@ -492,10 +487,10 @@ void RVMatrixType::initTypeStr() {
   auto getTypeString = [&](StringRef TypeStr) {
     if (isScalar())
       return Twine(TypeStr + Twine(ElementBitwidth) + "_t").str();
-    std::string Head = IsZmv ? "v" : "m";
-    return Twine(Head + TypeStr + Twine(ElementBitwidth) + "m" +
-                 std::to_string(LMUL) + "_t")
-        .str();
+    if (!IsZmv)
+      return Twine("m" + TypeStr + Twine(ElementBitwidth) + "_t").str();
+    return Twine("v" + TypeStr + Twine(ElementBitwidth) + "m" +
+      std::to_string(LMUL) + "_t").str();
   };
 
   switch (ScalarType) {
@@ -583,17 +578,17 @@ RVMatrixType::RVMatrixType(BasicType BT, int LMUL, StringRef prototype)
   }
 }
 
-int RVMatrixType::getLMULParam() {
-  if (LMUL == 1)
-    return 0;
-  else if (LMUL == 2)
-    return 1;
-  else if (LMUL == 4)
-    return 2;
+// int RVMatrixType::getLMULParam() {
+//   if (LMUL == 1)
+//     return 0;
+//   else if (LMUL == 2)
+//     return 1;
+//   else if (LMUL == 4)
+//     return 2;
 
-  // default return m0
-  return 3;
-}
+//   // default return m0
+//   return 3;
+// }
 
 Optional<RVMatrixTypes>
 RVMatrixEmitter::computeTypes(BasicType BT, int LMUL,
@@ -744,78 +739,54 @@ void RVMatrixEmitter::createHeader(raw_ostream &OS) {
         "__attribute__((__always_inline__, __nodebug__, __overloadable__))\n\n";
 
   OS << "#ifndef __RISCV_VECTOR_H\n";
-  OS << "typedef __rvv_int8m1_t vint8m1_t;\n";
-  OS << "typedef __rvv_uint8m1_t vuint8m1_t;\n";
-  OS << "typedef __rvv_int16m1_t vint16m1_t;\n";
-  OS << "typedef __rvv_uint16m1_t vuint16m1_t;\n";
-  OS << "typedef __rvv_int32m1_t vint32m1_t;\n";
-  OS << "typedef __rvv_uint32m1_t vuint32m1_t;\n";
-  OS << "typedef __rvv_int64m1_t vint64m1_t;\n";
-  OS << "typedef __rvv_uint64m1_t vuint64m1_t;\n";
+  OS << "typedef __rvv_int8m1_t    vint8m1_t;\n";
+  OS << "typedef __rvv_uint8m1_t   vuint8m1_t;\n";
+  OS << "typedef __rvv_int16m1_t   vint16m1_t;\n";
+  OS << "typedef __rvv_uint16m1_t  vuint16m1_t;\n";
+  OS << "typedef __rvv_int32m1_t   vint32m1_t;\n";
+  OS << "typedef __rvv_uint32m1_t  vuint32m1_t;\n";
+  OS << "typedef __rvv_int64m1_t   vint64m1_t;\n";
+  OS << "typedef __rvv_uint64m1_t  vuint64m1_t;\n";
   OS << "typedef __rvv_float16m1_t vfloat16m1_t;\n";
   OS << "typedef __rvv_float32m1_t vfloat32m1_t;\n";
   OS << "typedef __rvv_float64m1_t vfloat64m1_t;\n";
 
-  OS << "typedef __rvv_int8m2_t vint8m2_t;\n";
-  OS << "typedef __rvv_uint8m2_t vuint8m2_t;\n";
-  OS << "typedef __rvv_int16m2_t vint16m2_t;\n";
-  OS << "typedef __rvv_uint16m2_t vuint16m2_t;\n";
-  OS << "typedef __rvv_int32m2_t vint32m2_t;\n";
-  OS << "typedef __rvv_uint32m2_t vuint32m2_t;\n";
-  OS << "typedef __rvv_int64m2_t vint64m2_t;\n";
-  OS << "typedef __rvv_uint64m2_t vuint64m2_t;\n";
+  OS << "typedef __rvv_int8m2_t    vint8m2_t;\n";
+  OS << "typedef __rvv_uint8m2_t   vuint8m2_t;\n";
+  OS << "typedef __rvv_int16m2_t   vint16m2_t;\n";
+  OS << "typedef __rvv_uint16m2_t  vuint16m2_t;\n";
+  OS << "typedef __rvv_int32m2_t   vint32m2_t;\n";
+  OS << "typedef __rvv_uint32m2_t  vuint32m2_t;\n";
+  OS << "typedef __rvv_int64m2_t   vint64m2_t;\n";
+  OS << "typedef __rvv_uint64m2_t  vuint64m2_t;\n";
   OS << "typedef __rvv_float16m2_t vfloat16m2_t;\n";
   OS << "typedef __rvv_float32m2_t vfloat32m2_t;\n";
   OS << "typedef __rvv_float64m2_t vfloat64m2_t;\n";
 
-  OS << "typedef __rvv_int8m4_t vint8m4_t;\n";
-  OS << "typedef __rvv_uint8m4_t vuint8m4_t;\n";
-  OS << "typedef __rvv_int16m4_t vint16m4_t;\n";
-  OS << "typedef __rvv_uint16m4_t vuint16m4_t;\n";
-  OS << "typedef __rvv_int32m4_t vint32m4_t;\n";
-  OS << "typedef __rvv_uint32m4_t vuint32m4_t;\n";
-  OS << "typedef __rvv_int64m4_t vint64m4_t;\n";
-  OS << "typedef __rvv_uint64m4_t vuint64m4_t;\n";
+  OS << "typedef __rvv_int8m4_t    vint8m4_t;\n";
+  OS << "typedef __rvv_uint8m4_t   vuint8m4_t;\n";
+  OS << "typedef __rvv_int16m4_t   vint16m4_t;\n";
+  OS << "typedef __rvv_uint16m4_t  vuint16m4_t;\n";
+  OS << "typedef __rvv_int32m4_t   vint32m4_t;\n";
+  OS << "typedef __rvv_uint32m4_t  vuint32m4_t;\n";
+  OS << "typedef __rvv_int64m4_t   vint64m4_t;\n";
+  OS << "typedef __rvv_uint64m4_t  vuint64m4_t;\n";
   OS << "typedef __rvv_float16m4_t vfloat16m4_t;\n";
   OS << "typedef __rvv_float32m4_t vfloat32m4_t;\n";
   OS << "typedef __rvv_float64m4_t vfloat64m4_t;\n";
   OS << "#endif\n\n";
 
-  OS << "typedef __rvv_int8m16_t mint8m1_t;\n";
-  OS << "typedef __rvv_uint8m16_t muint8m1_t;\n";
-  OS << "typedef __rvv_int16m16_t mint16m1_t;\n";
-  OS << "typedef __rvv_uint16m16_t muint16m1_t;\n";
-  OS << "typedef __rvv_int32m16_t mint32m1_t;\n";
-  OS << "typedef __rvv_uint32m16_t muint32m1_t;\n";
-  OS << "typedef __rvv_int64m16_t mint64m1_t;\n";
-  OS << "typedef __rvv_uint64m16_t muint64m1_t;\n";
-  OS << "typedef __rvv_float16m16_t mfloat16m1_t;\n";
-  OS << "typedef __rvv_float32m16_t mfloat32m1_t;\n";
-  OS << "typedef __rvv_float64m16_t mfloat64m1_t;\n";
-
-  OS << "typedef __rvv_int8m32_t mint8m2_t;\n";
-  OS << "typedef __rvv_uint8m32_t muint8m2_t;\n";
-  OS << "typedef __rvv_int16m32_t mint16m2_t;\n";
-  OS << "typedef __rvv_uint16m32_t muint16m2_t;\n";
-  OS << "typedef __rvv_int32m32_t mint32m2_t;\n";
-  OS << "typedef __rvv_uint32m32_t muint32m2_t;\n";
-  OS << "typedef __rvv_int64m32_t mint64m2_t;\n";
-  OS << "typedef __rvv_uint64m32_t muint64m2_t;\n";
-  OS << "typedef __rvv_float16m32_t mfloat16m2_t;\n";
-  OS << "typedef __rvv_float32m32_t mfloat32m2_t;\n";
-  OS << "typedef __rvv_float64m32_t mfloat64m2_t;\n";
-
-  OS << "typedef __rvv_int8m64_t mint8m4_t;\n";
-  OS << "typedef __rvv_uint8m64_t muint8m4_t;\n";
-  OS << "typedef __rvv_int16m64_t mint16m4_t;\n";
-  OS << "typedef __rvv_uint16m64_t muint16m4_t;\n";
-  OS << "typedef __rvv_int32m64_t mint32m4_t;\n";
-  OS << "typedef __rvv_uint32m64_t muint32m4_t;\n";
-  OS << "typedef __rvv_int64m64_t mint64m4_t;\n";
-  OS << "typedef __rvv_uint64m64_t muint64m4_t;\n";
-  OS << "typedef __rvv_float16m64_t mfloat16m4_t;\n";
-  OS << "typedef __rvv_float32m64_t mfloat32m4_t;\n";
-  OS << "typedef __rvv_float64m64_t mfloat64m4_t;\n";
+  OS << "typedef __rvv_int8m16_t    mint8_t;\n";
+  OS << "typedef __rvv_uint8m16_t   muint8_t;\n";
+  OS << "typedef __rvv_int16m16_t   mint16_t;\n";
+  OS << "typedef __rvv_uint16m16_t  muint16_t;\n";
+  OS << "typedef __rvv_int32m16_t   mint32_t;\n";
+  OS << "typedef __rvv_uint32m16_t  muint32_t;\n";
+  OS << "typedef __rvv_int64m16_t   mint64_t;\n";
+  OS << "typedef __rvv_uint64m16_t  muint64_t;\n";
+  OS << "typedef __rvv_float16m16_t mfloat16_t;\n";
+  OS << "typedef __rvv_float32m16_t mfloat32_t;\n";
+  OS << "typedef __rvv_float64m16_t mfloat64_t;\n";
   OS << "\n";
 
   std::vector<std::unique_ptr<RVMatrixIntrinsic>> Defs;

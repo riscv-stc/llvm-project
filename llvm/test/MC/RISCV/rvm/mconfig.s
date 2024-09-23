@@ -9,80 +9,170 @@
 # RUN:        | llvm-objdump -d - | FileCheck %s --check-prefix=CHECK-UNKNOWN
 
 
-msettypei ra, e8, m4, ba, fp64, int4
-# CHECK-INST: msettypei ra, e8, m4, ba, fp64, int4
-# CHECK-ENCODING: [0xf7,0x70,0x31,0x02]
-# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 70 31 02 <unknown>
-
 msettype ra, a0
 # CHECK-INST: msettype ra, a0
-# CHECK-ENCODING: [0xf7,0x70,0x05,0x10]
+# CHECK-ENCODING: [0xf7,0x40,0x05,0x00]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 70 05 10 <unknown>
+# CHECK-UNKNOWN: f7 40 05 00 <unknown>
 
-msettilemi ra, 4097
-# CHECK-INST: msettilemi ra, 4097
-# CHECK-ENCODING: [0xf7,0xf0,0x00,0x28]
+msettypei ra, 0
+# CHECK-INST: msettypei ra, 0
+# CHECK-ENCODING: [0xf7,0x40,0x00,0x02]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 f0 00 28 <unknown>
+# CHECK-UNKNOWN: f7 40 00 02 <unknown>
 
-msettileki ra, 4097
-# CHECK-INST: msettileki ra, 4097
-# CHECK-ENCODING: [0xf7,0xf0,0x00,0x48]
+msettypehi ra, 0
+# CHECK-INST: msettypehi ra, 0
+# CHECK-ENCODING: [0xf7,0x50,0x00,0x02]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 f0 00 48 <unknown>
+# CHECK-UNKNOWN: f7 50 00 02 <unknown>
 
-msettileni ra, 4097
-# CHECK-INST: msettileni ra, 4097
-# CHECK-ENCODING: [0xf7,0xf0,0x00,0x68]
+msetsew ra, 0
+# CHECK-INST: msetsew ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x00,0x02]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 f0 00 68 <unknown>
+# CHECK-UNKNOWN: f7 60 00 02 <unknown>
+
+msetint4 ra, 0
+# CHECK-INST: msetint4 ra, 0
+# CHECK-ENCODING: [0xf7,0xe0,0x00,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 e0 00 02 <unknown>
+
+msetint8 ra, 0
+# CHECK-INST: msetint8 ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x01,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 60 01 02 <unknown>
+
+msetint16 ra, 0
+# CHECK-INST: msetint16 ra, 0
+# CHECK-ENCODING: [0xf7,0xe0,0x01,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 e0 01 02 <unknown>
+
+msetint32 ra, 0
+# CHECK-INST: msetint32 ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x02,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 60 02 02 <unknown>
+
+msetint64 ra, 0
+# CHECK-INST: msetint64 ra, 0
+# CHECK-ENCODING: [0xf7,0xe0,0x02,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 e0 02 02 <unknown>
+
+msetfp8 ra, 0
+# CHECK-INST: msetfp8 ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x03,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 60 03 02 <unknown>
+
+msetfp16 ra, 0
+# CHECK-INST: msetfp16 ra, 0
+# CHECK-ENCODING: [0xf7,0xe0,0x03,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 e0 03 02 <unknown>
+
+msetfp32 ra, 0
+# CHECK-INST: msetfp32 ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x04,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 60 04 02 <unknown>
+
+msetfp64 ra, 0
+# CHECK-INST: msetfp64 ra, 0
+# CHECK-ENCODING: [0xf7,0xe0,0x04,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 e0 04 02 <unknown>
+
+msetba ra, 0
+# CHECK-INST: msetba ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x05,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 60 05 02 <unknown>
 
 msettilem ra, a0
 # CHECK-INST: msettilem ra, a0
-# CHECK-ENCODING: [0xf7,0x70,0x05,0x30]
+# CHECK-ENCODING: [0xf7,0x50,0x05,0x04]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 70 05 30 <unknown>
+# CHECK-UNKNOWN: f7 50 05 04 <unknown>
+
+msettilemi ra, 0
+# CHECK-INST: msettilemi ra, 0
+# CHECK-ENCODING: [0xf7,0x50,0x00,0x06]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 50 00 06 <unknown>
 
 msettilek ra, a0
 # CHECK-INST: msettilek ra, a0
-# CHECK-ENCODING: [0xf7,0x70,0x05,0x50]
+# CHECK-ENCODING: [0xf7,0x60,0x05,0x04]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 70 05 50 <unknown>
+# CHECK-UNKNOWN: f7 60 05 04 <unknown>
+
+msettileki ra, 0
+# CHECK-INST: msettileki ra, 0
+# CHECK-ENCODING: [0xf7,0x60,0x00,0x06]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 60 00 06 <unknown>
 
 msettilen ra, a0
 # CHECK-INST: msettilen ra, a0
-# CHECK-ENCODING: [0xf7,0x70,0x05,0x70]
+# CHECK-ENCODING: [0xf7,0x40,0x05,0x04]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 70 05 70 <unknown>
+# CHECK-UNKNOWN: f7 40 05 04 <unknown>
 
-msettile ra, a0
-# CHECK-INST: msettile ra, a0
-# CHECK-ENCODING: [0xf7,0x70,0x05,0x80]
+msettileni ra, 0
+# CHECK-INST: msettileni ra, 0
+# CHECK-ENCODING: [0xf7,0x40,0x00,0x06]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: f7 70 05 80 <unknown>
+# CHECK-UNKNOWN: f7 40 00 06 <unknown>
+
+msettspi ra, 0
+# CHECK-INST: msettspi ra, 0
+# CHECK-ENCODING: [0xf7,0x70,0x00,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 70 00 02 <unknown>
+
+msettsp ra, a0
+# CHECK-INST: msettsp ra, a0
+# CHECK-ENCODING: [0xf7,0x70,0x05,0x00]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 70 05 00 <unknown>
+
+msetdspi ra, 0
+# CHECK-INST: msetdspi ra, 0
+# CHECK-ENCODING: [0xf7,0x70,0x00,0x06]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 70 00 06 <unknown>
+
+msetdsp ra, a0
+# CHECK-INST: msetdsp ra, a0
+# CHECK-ENCODING: [0xf7,0x70,0x05,0x04]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 70 05 04 <unknown>
 
 msetoutsh a0, a1, a2
 # CHECK-INST: msetoutsh a0, a1, a2
-# CHECK-ENCODING: [0x77,0xf5,0xc5,0x80]
+# CHECK-ENCODING: [0x77,0xc5,0xc5,0x08]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: 77 f5 c5 80 <unknown>
+# CHECK-UNKNOWN: 77 c5 c5 08 <unknown>
 
 msetinsh a0, a1, a2
 # CHECK-INST: msetinsh a0, a1, a2
-# CHECK-ENCODING: [0x77,0xf5,0xc5,0x90]
+# CHECK-ENCODING: [0x77,0xd5,0xc5,0x08]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: 77 f5 c5 90 <unknown>
+# CHECK-UNKNOWN: 77 d5 c5 08 <unknown>
 
 msetsk a0, a1, a2
 # CHECK-INST: msetsk a0, a1, a2
-# CHECK-ENCODING: [0x77,0xf5,0xc5,0xa0]
+# CHECK-ENCODING: [0x77,0xe5,0xc5,0x08]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: 77 f5 c5 a0 <unknown>
+# CHECK-UNKNOWN: 77 e5 c5 08 <unknown>
 
 msetpadval a0, a1
 # CHECK-INST: msetpadval a0, a1
-# CHECK-ENCODING: [0x77,0xf5,0x05,0xb0]
+# CHECK-ENCODING: [0x77,0xf5,0x05,0x08]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
-# CHECK-UNKNOWN: 77 f5 05 b0 <unknown>
+# CHECK-UNKNOWN: 77 f5 05 08 <unknown>

@@ -215,4 +215,8 @@ void RISCVMType::printLUML(unsigned LMUL, raw_ostream &OS) {
   OS << "m" << getLMUL(LMUL);
 }
 
+void RISCVMType::printMField(unsigned MField, raw_ostream &OS) {
+  OS << "xxxxx";
+}
+
 } // namespace llvm

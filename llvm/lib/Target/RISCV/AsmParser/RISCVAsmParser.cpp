@@ -165,6 +165,7 @@ class RISCVAsmParser : public MCTargetAsmParser {
   OperandMatchResultTy parseVTypeI(OperandVector &Operands);
   OperandMatchResultTy parseMTypeI(OperandVector &Operands);
   OperandMatchResultTy parseLMULTypeI(OperandVector &Operands);
+  OperandMatchResultTy parseMFieldI(OperandVector &Operands);
   OperandMatchResultTy parseMaskReg(OperandVector &Operands);
 
   bool parseOperand(OperandVector &Operands, StringRef Mnemonic);
@@ -267,6 +268,7 @@ struct RISCVOperand : public MCParsedAsmOperand {
     VType,
     MType,
     LMULType,
+    MField,
   } Kind;
 
   bool IsRV64;
@@ -284,6 +286,10 @@ struct RISCVOperand : public MCParsedAsmOperand {
   };
 
   struct LMULTypeOp {
+    unsigned Val;
+  };
+
+  struct MFieldOp {
     unsigned Val;
   };
 
@@ -308,6 +314,7 @@ struct RISCVOperand : public MCParsedAsmOperand {
     struct VTypeOp VType;
     struct MTypeOp MType;
     struct LMULTypeOp LMULType;
+    struct MFieldOp MField;
   };
 
   RISCVOperand(KindTy K) : MCParsedAsmOperand(), Kind(K) {}
@@ -340,6 +347,9 @@ public:
     case KindTy::LMULType:
       LMULType = o.LMULType;
       break;
+    case KindTy::MField:
+      MField = o.MField;
+      break;
     }
   }
 
@@ -354,6 +364,7 @@ public:
   bool isVType() const { return Kind == KindTy::VType; }
   bool isMType() const { return Kind == KindTy::MType; }
   bool isLMULTypeI() const { return Kind == KindTy::LMULType; }
+  bool isMField() const { return Kind == KindTy::MField; }
 
   bool isGPR() const {
     return Kind == KindTy::Register &&
@@ -439,6 +450,7 @@ public:
 
   bool isVTypeI() const { return isVType(); }
   bool isMTypeI() const { return isMType(); }
+  bool isMFieldI() const { return isMField(); }
 
   /// Return true if the operand is a valid for the fence instruction e.g.
   /// ('iorw').
@@ -562,6 +574,15 @@ public:
       return false;
     bool IsConstantImm = evaluateConstantImm(getImm(), Imm, VK);
     return IsConstantImm && isUInt<7>(Imm) && VK == RISCVMCExpr::VK_RISCV_None;
+  }
+
+  bool isUImm10() const {
+    int64_t Imm;
+    RISCVMCExpr::VariantKind VK = RISCVMCExpr::VK_RISCV_None;
+    if (!isImm())
+      return false;
+    bool IsConstantImm = evaluateConstantImm(getImm(), Imm, VK);
+    return IsConstantImm && isUInt<10>(Imm) && VK == RISCVMCExpr::VK_RISCV_None;
   }
 
   bool isUImm13() const {
@@ -793,6 +814,11 @@ public:
     return MType.Val;
   }
 
+  unsigned getMField() const {
+    assert(Kind == KindTy::MField && "Invalid type access!");
+    return MField.Val;
+  }
+
   unsigned getLMULType() const {
     assert(Kind == KindTy::LMULType && "Invalid type access!");
     return LMULType.Val;
@@ -827,6 +853,11 @@ public:
     case KindTy::MType:
       OS << "<mtype: ";
       RISCVMType::printMType(getMType(), OS);
+      OS << '>';
+      break;
+    case KindTy::MField:
+      OS << "<mfield: ";
+      RISCVMType::printMField(getMField(), OS);
       OS << '>';
       break;
     case KindTy::LMULType:
@@ -871,6 +902,15 @@ public:
                                                    bool IsRV64) {
     auto Op = std::make_unique<RISCVOperand>(KindTy::MType);
     Op->VType.Val = MTypeI;
+    Op->StartLoc = S;
+    Op->IsRV64 = IsRV64;
+    return Op;
+  }
+
+  static std::unique_ptr<RISCVOperand> createMField(unsigned MFieldI, SMLoc S,
+                                                   bool IsRV64) {
+    auto Op = std::make_unique<RISCVOperand>(KindTy::MField);
+    Op->VType.Val = MFieldI;
     Op->StartLoc = S;
     Op->IsRV64 = IsRV64;
     return Op;
@@ -957,6 +997,11 @@ public:
   void addMTypeIOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
     Inst.addOperand(MCOperand::createImm(getMType()));
+  }
+
+  void addMFieldIOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    Inst.addOperand(MCOperand::createImm(getMField()));
   }
 
   void addLMULTypeIOperands(MCInst &Inst, unsigned N) const {
@@ -1275,6 +1320,13 @@ bool RISCVAsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
         ErrorLoc,
         "operand must be "
         "e[8|16|32|64],m[1|2|4],[ba|bu],fp64,bf16,tf32,fp8,int4");
+  }
+  case Match_InvalidMFieldI: {
+    SMLoc ErrorLoc = ((RISCVOperand &)*Operands[ErrorInfo]).getStartLoc();
+    return Error(
+        ErrorLoc,
+        "operand must be "
+        "mint[4|8|16|32|64],mfp[8|16|32|64]");
   }
   case Match_InvalidLMULTypeI: {
     SMLoc ErrorLoc = ((RISCVOperand &)*Operands[ErrorInfo]).getStartLoc();
@@ -1870,6 +1922,11 @@ MatchFail:
   while (!MTypeIElements.empty())
     getLexer().UnLex(MTypeIElements.pop_back_val());
   return MatchOperand_NoMatch;
+}
+
+OperandMatchResultTy RISCVAsmParser::parseMFieldI(OperandVector &Operands) {
+
+  return MatchOperand_Success;
 }
 
 OperandMatchResultTy RISCVAsmParser::parseMaskReg(OperandVector &Operands) {

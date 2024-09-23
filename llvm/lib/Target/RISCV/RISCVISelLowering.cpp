@@ -96,23 +96,21 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
   static const MVT::SimpleValueType IntVecVTs[] = {
       MVT::nxv1i8,   MVT::nxv2i8,    MVT::nxv4i8,    MVT::nxv8i8,
       MVT::nxv16i8,  MVT::nxv32i8,   MVT::nxv64i8,   MVT::nxv128i8,
-      MVT::nxv256i8, MVT::nxv512i8,  MVT::nxv1i16,   MVT::nxv2i16,
-      MVT::nxv4i16,  MVT::nxv8i16,   MVT::nxv16i16,  MVT::nxv32i16,
-      MVT::nxv64i16, MVT::nxv128i16, MVT::nxv256i16, MVT::nxv1i32,
+      MVT::nxv1i16,   MVT::nxv2i16,  MVT::nxv4i16,   MVT::nxv8i16,
+      MVT::nxv16i16,  MVT::nxv32i16, MVT::nxv64i16,  MVT::nxv1i32,
       MVT::nxv2i32,  MVT::nxv4i32,   MVT::nxv8i32,   MVT::nxv16i32,
-      MVT::nxv32i32, MVT::nxv64i32,  MVT::nxv128i32, MVT::nxv1i64,
-      MVT::nxv2i64,  MVT::nxv4i64,   MVT::nxv8i64,   MVT::nxv16i64,
-      MVT::nxv32i64, MVT::nxv64i64};
+      MVT::nxv32i32, MVT::nxv1i64,   MVT::nxv2i64,   MVT::nxv4i64,
+      MVT::nxv8i64,   MVT::nxv16i64};
   static const MVT::SimpleValueType F16VecVTs[] = {
       MVT::nxv1f16,  MVT::nxv2f16,   MVT::nxv4f16,
       MVT::nxv8f16,  MVT::nxv16f16,  MVT::nxv32f16,
-      MVT::nxv64f16, MVT::nxv128f16, MVT::nxv256f16};
+      MVT::nxv64f16};
   static const MVT::SimpleValueType F32VecVTs[] = {
       MVT::nxv1f32,  MVT::nxv2f32,  MVT::nxv4f32,  MVT::nxv8f32,
-      MVT::nxv16f32, MVT::nxv32f32, MVT::nxv64f32, MVT::nxv128f32};
+      MVT::nxv16f32, MVT::nxv32f32};
   static const MVT::SimpleValueType F64VecVTs[] = {
       MVT::nxv1f64,  MVT::nxv2f64,  MVT::nxv4f64, MVT::nxv8f64,
-      MVT::nxv16f64, MVT::nxv32f64, MVT::nxv64f64};
+      MVT::nxv16f64};
 
   if (Subtarget.hasStdExtV()) {
     auto addRegClassForRVV = [this](MVT VT) {
@@ -128,11 +126,7 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
       else if (Size == 512)
         RC = &RISCV::VRM8RegClass;
       else if (Size == 1024)
-        RC = &RISCV::TRRRegClass;
-      else if (Size == 2048)
-        RC = &RISCV::TRRM2RegClass;
-      else if (Size == 4096)
-        RC = &RISCV::TRRM4RegClass;
+        RC = &RISCV::ACCRRegClass;
       else
         llvm_unreachable("Invalid Size.");
 
@@ -3733,15 +3727,29 @@ SDValue RISCVTargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op,
     return DAG.getNode(RISCVISD::VSELECT_VL, DL, VT, SelectCond, SplattedVal,
                        Vec, VL);
   }
-  case Intrinsic::riscv_mmv_x_s:
+  case Intrinsic::riscv_mmv_x_t:
     assert(Op.getValueType() == XLenVT && "Unexpected VT!");
-    return DAG.getNode(RISCVISD::MMV_X_S, DL, Op.getValueType(),
+    return DAG.getNode(RISCVISD::MMV_X_T, DL, Op.getValueType(),
                        Op.getOperand(1), Op.getOperand(2));
-  case Intrinsic::riscv_mmv_s_x: {
+  case Intrinsic::riscv_mmv_x_a:
+    assert(Op.getValueType() == XLenVT && "Unexpected VT!");
+    return DAG.getNode(RISCVISD::MMV_X_A, DL, Op.getValueType(),
+                       Op.getOperand(1), Op.getOperand(2));
+  case Intrinsic::riscv_mmv_t_x: {
     SDValue Scalar = Op.getOperand(2);
     if (Scalar.getValueType().bitsLE(XLenVT)) {
       Scalar = DAG.getNode(ISD::ANY_EXTEND, DL, XLenVT, Scalar);
-      return DAG.getNode(RISCVISD::MMV_S_X, DL, Op.getValueType(),
+      return DAG.getNode(RISCVISD::MMV_T_X, DL, Op.getValueType(),
+                         Op.getOperand(1), Scalar, Op.getOperand(3));
+    }
+    // TODO
+    break;
+  }
+  case Intrinsic::riscv_mmv_a_x: {
+    SDValue Scalar = Op.getOperand(2);
+    if (Scalar.getValueType().bitsLE(XLenVT)) {
+      Scalar = DAG.getNode(ISD::ANY_EXTEND, DL, XLenVT, Scalar);
+      return DAG.getNode(RISCVISD::MMV_A_X, DL, Op.getValueType(),
                          Op.getOperand(1), Scalar, Op.getOperand(3));
     }
     // TODO
@@ -5411,19 +5419,23 @@ void RISCVTargetLowering::ReplaceNodeResults(SDNode *N,
       Results.push_back(DAG.getNode(ISD::TRUNCATE, DL, MVT::i32, Res));
       break;
     }
-    case Intrinsic::riscv_mmv_x_s: {
+    case Intrinsic::riscv_mmv_x_t:
+    case Intrinsic::riscv_mmv_x_a: {
+      unsigned Opc = IntNo == Intrinsic::riscv_mmv_x_t
+                         ? RISCVISD::MMV_X_T
+                         : RISCVISD::MMV_X_A;
       EVT VT = N->getValueType(0);
       MVT XLenVT = Subtarget.getXLenVT();
       if (VT.bitsLT(XLenVT)) {
         // Simple case just extract using mmv.x.s and truncate.
-        SDValue Extract = DAG.getNode(RISCVISD::MMV_X_S, DL,
+        SDValue Extract = DAG.getNode(Opc, DL,
                                       Subtarget.getXLenVT(), N->getOperand(1),
                                       N->getOperand(2));
         Results.push_back(DAG.getNode(ISD::TRUNCATE, DL, VT, Extract));
         return;
       }
       if (VT.bitsEq(XLenVT)) {
-        Results.push_back(DAG.getNode(RISCVISD::MMV_X_S, DL,
+        Results.push_back(DAG.getNode(Opc, DL,
                                       Subtarget.getXLenVT(), N->getOperand(1),
                                       N->getOperand(2)));
         return;
@@ -6777,7 +6789,8 @@ unsigned RISCVTargetLowering::ComputeNumSignBitsForTargetNode(
     }
     break;
   }
-  case RISCVISD::MMV_X_S:
+  case RISCVISD::MMV_X_T:
+  case RISCVISD::MMV_X_A:
   case RISCVISD::VMV_X_S:
     // The number of sign bits of the scalar result is computed by obtaining the
     // element type of the input vector operand, subtracting its width from the
@@ -8492,8 +8505,10 @@ const char *RISCVTargetLowering::getTargetNodeName(unsigned Opcode) const {
   NODE_NAME_CASE(VMV_X_S)
   NODE_NAME_CASE(VMV_S_X_VL)
   NODE_NAME_CASE(VFMV_S_F_VL)
-  NODE_NAME_CASE(MMV_S_X)
-  NODE_NAME_CASE(MMV_X_S)
+  NODE_NAME_CASE(MMV_T_X)
+  NODE_NAME_CASE(MMV_A_X)
+  NODE_NAME_CASE(MMV_X_T)
+  NODE_NAME_CASE(MMV_X_A)
   NODE_NAME_CASE(SPLAT_VECTOR_I64)
   NODE_NAME_CASE(SPLAT_VECTOR_SPLIT_I64_VL)
   NODE_NAME_CASE(READ_VLENB)

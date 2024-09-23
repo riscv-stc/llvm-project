@@ -571,54 +571,23 @@ def AnyReg : RegisterClass<"RISCV", [untyped], 32,
 }
 
 
-defvar mint8m1_t  = nxv128i8;
-defvar mint8m2_t  = nxv256i8;
-defvar mint8m4_t  = nxv512i8;
-defvar mint16m1_t = nxv64i16;
-defvar mint16m2_t = nxv128i16;
-defvar mint16m4_t = nxv256i16;
-defvar mint32m1_t = nxv32i32;
-defvar mint32m2_t = nxv64i32;
-defvar mint32m4_t = nxv128i32;
-defvar mint64m1_t = nxv16i64;
-defvar mint64m2_t = nxv32i64;
-defvar mint64m4_t = nxv64i64;
-
-defvar mfloat16m1_t = nxv64f16;
-defvar mfloat16m2_t = nxv128f16;
-defvar mfloat16m4_t = nxv256f16;
-defvar mfloat32m1_t = nxv32f32;
-defvar mfloat32m2_t = nxv64f32;
-defvar mfloat32m4_t = nxv128f32;
-defvar mfloat64m1_t = nxv16f64;
-defvar mfloat64m2_t = nxv32f64;
-defvar mfloat64m4_t = nxv64f64;
+defvar mint8_t  = nxv128i8;
+defvar mint16_t = nxv64i16;
+defvar mint32_t = nxv32i32;
+defvar mint64_t = nxv16i64;
+defvar mfloat16_t = nxv64f16;
+defvar mfloat32_t = nxv32f32;
+defvar mfloat64_t = nxv16f64;
 
 
 // Matrix registers
 let RegAltNameIndices = [ABIRegAltName] in {
-  foreach Index = 0-8 in {
+  foreach Index = 0-7 in {
     def TR#Index : RISCVReg<Index, "tr"#Index, ["tr"#Index]>, DwarfRegNum<[!add(Index, 128)]>;
   }
 
-  foreach Index = [0, 2, 4, 6] in {
-    def TR#Index#M2 : RISCVRegWithSubRegs<Index, "tr"#Index,
-                       [!cast<Register>("TR"#Index),
-                        !cast<Register>("TR"#!add(Index, 1))],
-                       ["tr"#Index]>,
-                     DwarfRegAlias<!cast<Register>("TR"#Index)> {
-      let SubRegIndices = [sub_vrm1_0, sub_vrm1_1];
-    }
-  }
-
-  foreach Index = [0, 4] in {
-    def TR#Index#M4 : RISCVRegWithSubRegs<Index, "tr"#Index,
-                       [!cast<Register>("TR"#Index#"M2"),
-                        !cast<Register>("TR"#!add(Index, 2)#"M2")],
-                       ["tr"#Index]>,
-                     DwarfRegAlias<!cast<Register>("TR"#Index)> {
-      let SubRegIndices = [sub_vrm2_0, sub_vrm2_1];
-    }
+  foreach Index = 0-7 in {
+    def ACC#Index : RISCVReg<Index, "acc"#Index, ["acc"#Index]>, DwarfRegNum<[!add(Index, 136)]>;
   }
 
   def MTYPE  : RISCVReg<0, "mtype", ["mtype"]>;
@@ -632,7 +601,7 @@ let RegAltNameIndices = [ABIRegAltName] in {
   def MSTDI  : RISCVReg<0, "mstdi",  ["mstdi"]>;
   def MINSK  : RISCVReg<0, "minsk",  ["minsk"]>;
   def MOUTSK : RISCVReg<0, "moutsk", ["moutsk"]>;
-  def MPADVAL : RISCVReg<0, "mpadval",   ["mpadval"]>;
+  def MPADVAL: RISCVReg<0, "mpadval",["mpadval"]>;
 }
 
 class TRReg<list<ValueType> regTypes, dag regList, int Vlmul>
@@ -644,14 +613,19 @@ class TRReg<list<ValueType> regTypes, dag regList, int Vlmul>
   int Size = !mul(Vlmul, 64);
 }
 
-def TRR : TRReg<[mint8m1_t, mint16m1_t, mint32m1_t, mint64m1_t,
-               mfloat16m1_t, mfloat32m1_t, mfloat64m1_t],
+class ACCReg<list<ValueType> regTypes, dag regList, int Vlmul>
+  : RegisterClass<"RISCV",
+                  regTypes,
+                  64,
+                  regList> {
+  int VLMul = Vlmul;
+  int Size = !mul(Vlmul, 64);
+}
+
+def ACCR : ACCReg<[mint8_t, mint16_t, mint32_t, mint64_t,
+               mfloat16_t, mfloat32_t, mfloat64_t],
+           (add (sequence "ACC%u", 0, 7)), 1>;
+
+def TRR : TRReg<[mint8_t, mint16_t, mint32_t, mint64_t,
+               mfloat16_t, mfloat32_t, mfloat64_t],
            (add (sequence "TR%u", 0, 7)), 1>;
-
-def TRRM2 : TRReg<[mint8m2_t, mint16m2_t, mint32m2_t, mint64m2_t,
-               mfloat16m2_t, mfloat32m2_t, mfloat64m2_t],
-           (add TR0M2, TR2M2, TR4M2, TR6M2), 2>;
-
-def TRRM4 : TRReg<[mint8m4_t, mint16m4_t, mint32m4_t, mint64m4_t,
-               mfloat16m4_t, mfloat32m4_t, mfloat64m4_t],
-           (add TR0M4, TR4M4), 4>;

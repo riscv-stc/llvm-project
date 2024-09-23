@@ -10,47 +10,47 @@
 // CHECK-IR-RV64-LABEL: @test_mfsqrt_m_float16m1(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast half* [[IN1:%.*]] to <vscale x 64 x half>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 64 x half> @llvm.riscv.mlae.m.nxv64f16.i64(<vscale x 64 x half>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4:[0-9]+]]
-// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call <vscale x 64 x half> @llvm.riscv.mfsqrt.m.nxv64f16.i64(<vscale x 64 x half> [[TMP1]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 64 x half> @llvm.riscv.mlc.m.nxv64f16.i64(<vscale x 64 x half>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4:[0-9]+]]
+// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call <vscale x 64 x half> @llvm.riscv.mfsqrt.m.nxv64f16(<vscale x 64 x half> [[TMP1]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = bitcast half* [[OUT:%.*]] to <vscale x 64 x half>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv64f16.i64(<vscale x 64 x half> [[TMP2]], <vscale x 64 x half>* [[TMP3]], i64 [[A]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv64f16.i64(<vscale x 64 x half> [[TMP2]], <vscale x 64 x half>* [[TMP3]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
 void test_mfsqrt_m_float16m1(const _Float16 *in1, _Float16 *out, size_t a) {
-    mfloat16m1_t m1 = mlae16_m1(in1, a);
-    mfloat16m1_t mo = mfsqrt_m(m1);
-    msae16_m(mo, out, a);
+    mfloat16_t m1 = mlc_m(in1, a);
+    mfloat16_t mo = mfsqrt_m(m1);
+    msc_m(mo, out, a);
     return;
 }
 
 // CHECK-IR-RV64-LABEL: @test_mfsqrt_m_float32m1(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast float* [[IN1:%.*]] to <vscale x 32 x float>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 32 x float> @llvm.riscv.mlae.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call <vscale x 32 x float> @llvm.riscv.mfsqrt.m.nxv32f32.i64(<vscale x 32 x float> [[TMP1]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 32 x float> @llvm.riscv.mlc.m.nxv32f32.i64(<vscale x 32 x float>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call <vscale x 32 x float> @llvm.riscv.mfsqrt.m.nxv32f32(<vscale x 32 x float> [[TMP1]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = bitcast float* [[OUT:%.*]] to <vscale x 32 x float>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv32f32.i64(<vscale x 32 x float> [[TMP2]], <vscale x 32 x float>* [[TMP3]], i64 [[A]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv32f32.i64(<vscale x 32 x float> [[TMP2]], <vscale x 32 x float>* [[TMP3]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
 void test_mfsqrt_m_float32m1(const float *in1, float *out, size_t a) {
-    mfloat32m1_t m1 = mlae32_m1(in1, a);
-    mfloat32m1_t mo = mfsqrt_m(m1);
-    msae32_m(mo, out, a);
+    mfloat32_t m1 = mlc_m(in1, a);
+    mfloat32_t mo = mfsqrt_m(m1);
+    msc_m(mo, out, a);
     return;
 }
 
 // CHECK-IR-RV64-LABEL: @test_mfsqrt_m_float64m1(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast double* [[IN1:%.*]] to <vscale x 16 x double>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 16 x double> @llvm.riscv.mlae.m.nxv16f64.i64(<vscale x 16 x double>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call <vscale x 16 x double> @llvm.riscv.mfsqrt.m.nxv16f64.i64(<vscale x 16 x double> [[TMP1]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 16 x double> @llvm.riscv.mlc.m.nxv16f64.i64(<vscale x 16 x double>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call <vscale x 16 x double> @llvm.riscv.mfsqrt.m.nxv16f64(<vscale x 16 x double> [[TMP1]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = bitcast double* [[OUT:%.*]] to <vscale x 16 x double>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv16f64.i64(<vscale x 16 x double> [[TMP2]], <vscale x 16 x double>* [[TMP3]], i64 [[A]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv16f64.i64(<vscale x 16 x double> [[TMP2]], <vscale x 16 x double>* [[TMP3]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
 void test_mfsqrt_m_float64m1(const double *in1, double *out, size_t a) {
-    mfloat64m1_t m1 = mlae64_m1(in1, a);
-    mfloat64m1_t mo = mfsqrt_m(m1);
-    msae64_m(mo, out, a);
+    mfloat64_t m1 = mlc_m(in1, a);
+    mfloat64_t mo = mfsqrt_m(m1);
+    msc_m(mo, out, a);
     return;
 }

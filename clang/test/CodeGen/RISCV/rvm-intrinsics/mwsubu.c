@@ -4,59 +4,74 @@
 
 #include <riscv_matrix.h>
 
-// CHECK-IR-RV64-LABEL: @test_mwsubu_mm_uint16m2(
+// CHECK-IR-RV64-LABEL: @test_mwsubu_mm_uint16(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast i8* [[IN1:%.*]] to <vscale x 128 x i8>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 128 x i8> @llvm.riscv.mlae.m.nxv128i8.i64(<vscale x 128 x i8>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4:[0-9]+]]
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 128 x i8> @llvm.riscv.mlc.m.nxv128i8.i64(<vscale x 128 x i8>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4:[0-9]+]]
 // CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast i8* [[IN2:%.*]] to <vscale x 128 x i8>*
-// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 128 x i8> @llvm.riscv.mlae.m.nxv128i8.i64(<vscale x 128 x i8>* [[TMP2]], i64 [[A]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call <vscale x 128 x i16> @llvm.riscv.mwsubu.mm.nxv128i16.nxv128i8.i64(<vscale x 128 x i8> [[TMP1]], <vscale x 128 x i8> [[TMP3]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = bitcast i16* [[OUT:%.*]] to <vscale x 128 x i16>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv128i16.i64(<vscale x 128 x i16> [[TMP4]], <vscale x 128 x i16>* [[TMP5]], i64 [[A]], i64 1) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 128 x i8> @llvm.riscv.mlc.m.nxv128i8.i64(<vscale x 128 x i8>* [[TMP2]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call <vscale x 64 x i16> @llvm.riscv.mwsubu.mm.nxv64i16.nxv128i8(<vscale x 128 x i8> [[TMP1]], <vscale x 128 x i8> [[TMP3]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = bitcast i16* [[OUT:%.*]] to <vscale x 64 x i16>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv64i16.i64(<vscale x 64 x i16> [[TMP4]], <vscale x 64 x i16>* [[TMP5]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 64 x i16> @llvm.riscv.mwsubu.b.mm.nxv64i16.nxv128i8(<vscale x 128 x i8> [[TMP1]], <vscale x 128 x i8> [[TMP3]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = bitcast i16* [[OUT]] to <vscale x 64 x i16>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv64i16.i64(<vscale x 64 x i16> [[TMP6]], <vscale x 64 x i16>* [[TMP7]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_mwsubu_mm_uint16m2(const uint8_t *in1, const uint8_t *in2, int16_t *out, size_t a) {
-    muint8m1_t m1 = mlae8_m1(in1, a);
-    muint8m1_t m2 = mlae8_m1(in2, a);
-    mint16m2_t mo = mwsubu_mm(m1, m2);
-    msae16_m(mo, out, a);
+void test_mwsubu_mm_uint16(const uint8_t *in1, const uint8_t *in2, int16_t *out, size_t a) {
+    muint8_t m1 = mlc_m(in1, a);
+    muint8_t m2 = mlc_m(in2, a);
+    mint16_t mo = mwsubu_mm(m1, m2);
+    msc_m(mo, out, a);
+    mo = mwsubu_b_mm(m1, m2);
+    msc_m(mo, out, a);
     return;
 }
 
-// CHECK-IR-RV64-LABEL: @test_mwsubu_mm_uint32m2(
+// CHECK-IR-RV64-LABEL: @test_mwsubu_mm_uint32(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast i16* [[IN1:%.*]] to <vscale x 64 x i16>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 64 x i16> @llvm.riscv.mlae.m.nxv64i16.i64(<vscale x 64 x i16>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 64 x i16> @llvm.riscv.mlc.m.nxv64i16.i64(<vscale x 64 x i16>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast i16* [[IN2:%.*]] to <vscale x 64 x i16>*
-// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 64 x i16> @llvm.riscv.mlae.m.nxv64i16.i64(<vscale x 64 x i16>* [[TMP2]], i64 [[A]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call <vscale x 64 x i32> @llvm.riscv.mwsubu.mm.nxv64i32.nxv64i16.i64(<vscale x 64 x i16> [[TMP1]], <vscale x 64 x i16> [[TMP3]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = bitcast i32* [[OUT:%.*]] to <vscale x 64 x i32>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv64i32.i64(<vscale x 64 x i32> [[TMP4]], <vscale x 64 x i32>* [[TMP5]], i64 [[A]], i64 1) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 64 x i16> @llvm.riscv.mlc.m.nxv64i16.i64(<vscale x 64 x i16>* [[TMP2]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call <vscale x 32 x i32> @llvm.riscv.mwsubu.mm.nxv32i32.nxv64i16(<vscale x 64 x i16> [[TMP1]], <vscale x 64 x i16> [[TMP3]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = bitcast i32* [[OUT:%.*]] to <vscale x 32 x i32>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv32i32.i64(<vscale x 32 x i32> [[TMP4]], <vscale x 32 x i32>* [[TMP5]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 32 x i32> @llvm.riscv.mwsubu.h.mm.nxv32i32.nxv64i16(<vscale x 64 x i16> [[TMP1]], <vscale x 64 x i16> [[TMP3]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = bitcast i32* [[OUT]] to <vscale x 32 x i32>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv32i32.i64(<vscale x 32 x i32> [[TMP6]], <vscale x 32 x i32>* [[TMP7]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_mwsubu_mm_uint32m2(const uint16_t *in1, const uint16_t *in2, int32_t *out, size_t a) {
-    muint16m1_t m1 = mlae16_m1(in1, a);
-    muint16m1_t m2 = mlae16_m1(in2, a);
-    mint32m2_t mo = mwsubu_mm(m1, m2);
-    msae32_m(mo, out, a);
+void test_mwsubu_mm_uint32(const uint16_t *in1, const uint16_t *in2, int32_t *out, size_t a) {
+    muint16_t m1 = mlc_m(in1, a);
+    muint16_t m2 = mlc_m(in2, a);
+    mint32_t mo = mwsubu_mm(m1, m2);
+    msc_m(mo, out, a);
+    mo = mwsubu_h_mm(m1, m2);
+    msc_m(mo, out, a);
     return;
 }
 
-// CHECK-IR-RV64-LABEL: @test_mwsubu_mm_uint64m2(
+// CHECK-IR-RV64-LABEL: @test_mwsubu_mm_uint64(
 // CHECK-IR-RV64-NEXT:  entry:
 // CHECK-IR-RV64-NEXT:    [[TMP0:%.*]] = bitcast i32* [[IN1:%.*]] to <vscale x 32 x i32>*
-// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 32 x i32> @llvm.riscv.mlae.m.nxv32i32.i64(<vscale x 32 x i32>* [[TMP0]], i64 [[A:%.*]], i64 0) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call <vscale x 32 x i32> @llvm.riscv.mlc.m.nxv32i32.i64(<vscale x 32 x i32>* [[TMP0]], i64 [[A:%.*]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = bitcast i32* [[IN2:%.*]] to <vscale x 32 x i32>*
-// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 32 x i32> @llvm.riscv.mlae.m.nxv32i32.i64(<vscale x 32 x i32>* [[TMP2]], i64 [[A]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call <vscale x 32 x i64> @llvm.riscv.mwsubu.mm.nxv32i64.nxv32i32.i64(<vscale x 32 x i32> [[TMP1]], <vscale x 32 x i32> [[TMP3]], i64 0) #[[ATTR4]]
-// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = bitcast i64* [[OUT:%.*]] to <vscale x 32 x i64>*
-// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msae.m.nxv32i64.i64(<vscale x 32 x i64> [[TMP4]], <vscale x 32 x i64>* [[TMP5]], i64 [[A]], i64 1) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call <vscale x 32 x i32> @llvm.riscv.mlc.m.nxv32i32.i64(<vscale x 32 x i32>* [[TMP2]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call <vscale x 16 x i64> @llvm.riscv.mwsubu.mm.nxv16i64.nxv32i32(<vscale x 32 x i32> [[TMP1]], <vscale x 32 x i32> [[TMP3]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = bitcast i64* [[OUT:%.*]] to <vscale x 16 x i64>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv16i64.i64(<vscale x 16 x i64> [[TMP4]], <vscale x 16 x i64>* [[TMP5]], i64 [[A]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call <vscale x 16 x i64> @llvm.riscv.mwsubu.w.mm.nxv16i64.nxv32i32(<vscale x 32 x i32> [[TMP1]], <vscale x 32 x i32> [[TMP3]]) #[[ATTR4]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = bitcast i64* [[OUT]] to <vscale x 16 x i64>*
+// CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv16i64.i64(<vscale x 16 x i64> [[TMP6]], <vscale x 16 x i64>* [[TMP7]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_mwsubu_mm_uint64m2(const uint32_t *in1, const uint32_t *in2, int64_t *out, size_t a) {
-    muint32m1_t m1 = mlae32_m1(in1, a);
-    muint32m1_t m2 = mlae32_m1(in2, a);
-    mint64m2_t mo = mwsubu_mm(m1, m2);
-    msae64_m(mo, out, a);
+void test_mwsubu_mm_uint64(const uint32_t *in1, const uint32_t *in2, int64_t *out, size_t a) {
+    muint32_t m1 = mlc_m(in1, a);
+    muint32_t m2 = mlc_m(in2, a);
+    mint64_t mo = mwsubu_mm(m1, m2);
+    msc_m(mo, out, a);
+    mo = mwsubu_w_mm(m1, m2);
+    msc_m(mo, out, a);
     return;
 }
