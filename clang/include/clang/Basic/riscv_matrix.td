@@ -227,6 +227,22 @@ defm msfdb_m : RVMatrixMStoreBuiltin;
 defm msfdc_m : RVMatrixMStoreBuiltin;
 
 // 4.4. Data Move Instructions
+multiclass RVMatrixMMVBuitin {
+  let Name = NAME,
+      IRName = NAME,
+      IntrinsicTypes = [-1, 0, 1] in {
+    foreach type = TypeList in {
+      def : RISCVMatrixBuiltin<"v", "vvz", type>;
+      if !not(IsFloat<type>.val) then {
+        def : RISCVMatrixBuiltin<"Uv", "UvUvz", type>;
+      }
+    }
+  }
+}
+
+defm mmv_a_t : RVMatrixMMVBuitin;
+defm mmv_t_a : RVMatrixMMVBuitin;
+
 defm mmv_x_a : RVMatrixBuitinSet<"csil", [-1, 0, 1],
                                  [["v","evz"], ["Uv","UeUvz"]]>;
 defm mmv_a_x : RVMatrixBuitinSet<"csil", [-1, 1, 2],
@@ -255,16 +271,20 @@ defm mbcae_m : RVMatrixBCBuitin;
 defm mbcbe_m : RVMatrixBCBuitin;
 defm mbcce_m : RVMatrixBCBuitin;
 
-// // 4.5.1. Matrix Multiplication Instructions
-def mmau_mm    : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
-def mmau_h_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
-def mmau_w_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
-def mmau_dw_mm : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
-def mwmau_mm   : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
-def mwmau_h_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
-def mwmau_w_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
-def mqmau_mm   : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
-def mqmau_b_mm : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+defm mta_m : RVMatrixBCBuitin;
+defm mtb_m : RVMatrixBCBuitin;
+defm mtc_m : RVMatrixBCBuitin;
+
+// 4.5.1. Matrix Multiplication Instructions
+def mmau_mm     : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def mmau_h_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def mmau_w_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def mmau_dw_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mwmau_mm    : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mwmau_h_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mwmau_w_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def mqmau_mm    : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def mqmau_b_mm  : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
 def msmau_mm    : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
 def msmau_h_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
 def msmau_w_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
@@ -274,24 +294,24 @@ def mswmau_h_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
 def mswmau_w_mm : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
 def msqmau_mm   : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
 def msqmau_b_mm : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
-def mma_mm    : RVMatrixBin<"v", "vvvv", "sil">;
-def mma_h_mm  : RVMatrixBin<"v", "vvvv", "s">;
-def mma_w_mm  : RVMatrixBin<"v", "vvvv", "i">;
-def mma_dw_mm : RVMatrixBin<"v", "vvvv", "l">;
-def mwma_mm   : RVMatrixWidenBin<"w", "wwvv", "si">;
-def mwma_h_mm : RVMatrixWidenBin<"w", "wwvv", "s">;
-def mwma_w_mm : RVMatrixWidenBin<"w", "wwvv", "i">;
-def mqma_mm   : RVMatrixWidenBin<"q", "qqvv", "c">;
-def mqma_b_mm : RVMatrixWidenBin<"q", "qqvv", "c">;
-def msma_mm    : RVMatrixBin<"v", "vvvv", "sil">;
-def msma_h_mm  : RVMatrixBin<"v", "vvvv", "s">;
-def msma_w_mm  : RVMatrixBin<"v", "vvvv", "i">;
-def msma_dw_mm : RVMatrixBin<"v", "vvvv", "l">;
-def mswma_mm   : RVMatrixWidenBin<"w", "wwvv", "si">;
-def mswma_h_mm : RVMatrixWidenBin<"w", "wwvv", "s">;
-def mswma_w_mm : RVMatrixWidenBin<"w", "wwvv", "i">;
-def msqma_mm   : RVMatrixWidenBin<"q", "qqvv", "c">;
-def msqma_b_mm : RVMatrixWidenBin<"q", "qqvv", "c">;
+def mma_mm      : RVMatrixBin<"v", "vvvv", "sil">;
+def mma_h_mm    : RVMatrixBin<"v", "vvvv", "s">;
+def mma_w_mm    : RVMatrixBin<"v", "vvvv", "i">;
+def mma_dw_mm   : RVMatrixBin<"v", "vvvv", "l">;
+def mwma_mm     : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mwma_h_mm   : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mwma_w_mm   : RVMatrixWidenBin<"w", "wwvv", "i">;
+def mqma_mm     : RVMatrixWidenBin<"q", "qqvv", "c">;
+def mqma_b_mm   : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msma_mm     : RVMatrixBin<"v", "vvvv", "sil">;
+def msma_h_mm   : RVMatrixBin<"v", "vvvv", "s">;
+def msma_w_mm   : RVMatrixBin<"v", "vvvv", "i">;
+def msma_dw_mm  : RVMatrixBin<"v", "vvvv", "l">;
+def mswma_mm    : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mswma_h_mm  : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mswma_w_mm  : RVMatrixWidenBin<"w", "wwvv", "i">;
+def msqma_mm    : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msqma_b_mm  : RVMatrixWidenBin<"q", "qqvv", "c">;
 
 def mfma_mm     : RVMatrixBin<"v", "vvvv", "xfd">;
 def mfma_hf_mm  : RVMatrixBin<"v", "vvvv", "x">;
@@ -300,6 +320,99 @@ def mfma_d_mm   : RVMatrixBin<"v", "vvvv", "d">;
 def mfwma_mm    : RVMatrixWidenBin<"w", "wwvv", "xf">;
 def mfwma_hf_mm : RVMatrixWidenBin<"w", "wwvv", "x">;
 def mfwma_f_mm  : RVMatrixWidenBin<"w", "wwvv", "f">;
+
+// Matrix Sparsity Extension
+def mmau_spa_mm     : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def mmau_spa_h_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def mmau_spa_w_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def mmau_spa_dw_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mwmau_spa_mm    : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mwmau_spa_h_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mwmau_spa_w_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def mqmau_spa_mm    : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def mqmau_spa_b_mm  : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def msmau_spa_mm     : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def msmau_spa_h_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def msmau_spa_w_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def msmau_spa_dw_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mswmau_spa_mm    : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mswmau_spa_h_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mswmau_spa_w_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def msqmau_spa_mm    : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def msqmau_spa_b_mm  : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+
+def mma_spa_mm     : RVMatrixBin<"v", "vvvv", "sil">;
+def mma_spa_h_mm   : RVMatrixBin<"v", "vvvv", "s">;
+def mma_spa_w_mm   : RVMatrixBin<"v", "vvvv", "i">;
+def mma_spa_dw_mm  : RVMatrixBin<"v", "vvvv", "l">;
+def mwma_spa_mm    : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mwma_spa_h_mm  : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mwma_spa_w_mm  : RVMatrixWidenBin<"w", "wwvv", "i">;
+def mqma_spa_mm    : RVMatrixWidenBin<"q", "qqvv", "c">;
+def mqma_spa_b_mm  : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msma_spa_mm     : RVMatrixBin<"v", "vvvv", "sil">;
+def msma_spa_h_mm   : RVMatrixBin<"v", "vvvv", "s">;
+def msma_spa_w_mm   : RVMatrixBin<"v", "vvvv", "i">;
+def msma_spa_dw_mm  : RVMatrixBin<"v", "vvvv", "l">;
+def mswma_spa_mm    : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mswma_spa_h_mm  : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mswma_spa_w_mm  : RVMatrixWidenBin<"w", "wwvv", "i">;
+def msqma_spa_mm    : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msqma_spa_b_mm  : RVMatrixWidenBin<"q", "qqvv", "c">;
+
+def mfma_spa_mm     : RVMatrixBin<"v", "vvvv", "xfd">;
+def mfma_spa_hf_mm  : RVMatrixBin<"v", "vvvv", "x">;
+def mfma_spa_f_mm   : RVMatrixBin<"v", "vvvv", "f">;
+def mfma_spa_d_mm   : RVMatrixBin<"v", "vvvv", "d">;
+def mfwma_spa_mm    : RVMatrixWidenBin<"w", "wwvv", "xf">;
+def mfwma_spa_hf_mm : RVMatrixWidenBin<"w", "wwvv", "x">;
+def mfwma_spa_f_mm  : RVMatrixWidenBin<"w", "wwvv", "f">;
+
+def mmau_spb_mm     : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def mmau_spb_h_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def mmau_spb_w_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def mmau_spb_dw_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mwmau_spb_mm    : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mwmau_spb_h_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mwmau_spb_w_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def mqmau_spb_mm    : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def mqmau_spb_b_mm  : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def msmau_spb_mm     : RVMatrixBin<"Uv", "UvUvUvUv", "sil">;
+def msmau_spb_h_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "s">;
+def msmau_spb_w_mm   : RVMatrixBin<"Uv", "UvUvUvUv", "i">;
+def msmau_spb_dw_mm  : RVMatrixBin<"Uv", "UvUvUvUv", "l">;
+def mswmau_spb_mm    : RVMatrixWidenBin<"Uw", "UwUwUvUv", "si">;
+def mswmau_spb_h_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "s">;
+def mswmau_spb_w_mm  : RVMatrixWidenBin<"Uw", "UwUwUvUv", "i">;
+def msqmau_spb_mm    : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+def msqmau_spb_b_mm  : RVMatrixWidenBin<"Uq", "UqUqUvUv", "c">;
+
+def mma_spb_mm     : RVMatrixBin<"v", "vvvv", "sil">;
+def mma_spb_h_mm   : RVMatrixBin<"v", "vvvv", "s">;
+def mma_spb_w_mm   : RVMatrixBin<"v", "vvvv", "i">;
+def mma_spb_dw_mm  : RVMatrixBin<"v", "vvvv", "l">;
+def mwma_spb_mm    : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mwma_spb_h_mm  : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mwma_spb_w_mm  : RVMatrixWidenBin<"w", "wwvv", "i">;
+def mqma_spb_mm    : RVMatrixWidenBin<"q", "qqvv", "c">;
+def mqma_spb_b_mm  : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msma_spb_mm     : RVMatrixBin<"v", "vvvv", "sil">;
+def msma_spb_h_mm   : RVMatrixBin<"v", "vvvv", "s">;
+def msma_spb_w_mm   : RVMatrixBin<"v", "vvvv", "i">;
+def msma_spb_dw_mm  : RVMatrixBin<"v", "vvvv", "l">;
+def mswma_spb_mm    : RVMatrixWidenBin<"w", "wwvv", "si">;
+def mswma_spb_h_mm  : RVMatrixWidenBin<"w", "wwvv", "s">;
+def mswma_spb_w_mm  : RVMatrixWidenBin<"w", "wwvv", "i">;
+def msqma_spb_mm    : RVMatrixWidenBin<"q", "qqvv", "c">;
+def msqma_spb_b_mm  : RVMatrixWidenBin<"q", "qqvv", "c">;
+
+def mfma_spb_mm     : RVMatrixBin<"v", "vvvv", "xfd">;
+def mfma_spb_hf_mm  : RVMatrixBin<"v", "vvvv", "x">;
+def mfma_spb_f_mm   : RVMatrixBin<"v", "vvvv", "f">;
+def mfma_spb_d_mm   : RVMatrixBin<"v", "vvvv", "d">;
+def mfwma_spb_mm    : RVMatrixWidenBin<"w", "wwvv", "xf">;
+def mfwma_spb_hf_mm : RVMatrixWidenBin<"w", "wwvv", "x">;
+def mfwma_spb_f_mm  : RVMatrixWidenBin<"w", "wwvv", "f">;
 
 // 4.5.2 Element-Wise Add/Sub/Multiply Instructions
 def maddu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
@@ -424,11 +537,11 @@ def mmulhu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
 def mmulhu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
 def mmulhu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
 
-def mmulhsu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
-def mmulhsu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
-def mmulhsu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
-def mmulhsu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
-def mmulhsu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+def mmulhsu_mm    : RVMatrixBin<"v", "vvUv", "csil">;
+def mmulhsu_b_mm  : RVMatrixBin<"v", "vvUv", "c">;
+def mmulhsu_h_mm  : RVMatrixBin<"v", "vvUv", "s">;
+def mmulhsu_w_mm  : RVMatrixBin<"v", "vvUv", "i">;
+def mmulhsu_dw_mm : RVMatrixBin<"v", "vvUv", "l">;
 
 def msmul_mm    : RVMatrixBin<"v", "vvv", "csil">;
 def msmul_b_mm  : RVMatrixBin<"v", "vvv", "c">;
@@ -442,11 +555,11 @@ def msmulu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
 def msmulu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
 def msmulu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
 
-def msmulsu_mm    : RVMatrixBin<"Uv", "UvUvUv", "csil">;
-def msmulsu_b_mm  : RVMatrixBin<"Uv", "UvUvUv", "c">;
-def msmulsu_h_mm  : RVMatrixBin<"Uv", "UvUvUv", "s">;
-def msmulsu_w_mm  : RVMatrixBin<"Uv", "UvUvUv", "i">;
-def msmulsu_dw_mm : RVMatrixBin<"Uv", "UvUvUv", "l">;
+def msmulsu_mm    : RVMatrixBin<"v", "vvUv", "csil">;
+def msmulsu_b_mm  : RVMatrixBin<"v", "vvUv", "c">;
+def msmulsu_h_mm  : RVMatrixBin<"v", "vvUv", "s">;
+def msmulsu_w_mm  : RVMatrixBin<"v", "vvUv", "i">;
+def msmulsu_dw_mm : RVMatrixBin<"v", "vvUv", "l">;
 
 def mwmul_mm   : RVMatrixWidenBin<"w", "wvv", "csi">;
 def mwmul_b_mm : RVMatrixWidenBin<"w", "wvv", "c">;
@@ -458,10 +571,10 @@ def mwmulu_b_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "c">;
 def mwmulu_h_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "s">;
 def mwmulu_w_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "i">;
 
-def mwmulsu_mm   : RVMatrixWidenBin<"Uw", "UwUvUv", "csi">;
-def mwmulsu_b_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "c">;
-def mwmulsu_h_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "s">;
-def mwmulsu_w_mm : RVMatrixWidenBin<"Uw", "UwUvUv", "i">;
+def mwmulsu_mm   : RVMatrixWidenBin<"w", "wvUv", "csi">;
+def mwmulsu_b_mm : RVMatrixWidenBin<"w", "wvUv", "c">;
+def mwmulsu_h_mm : RVMatrixWidenBin<"w", "wvUv", "s">;
+def mwmulsu_w_mm : RVMatrixWidenBin<"w", "wvUv", "i">;
 
 // Float matrix element-wise
 def mfadd_mm     : RVMatrixBin<"v", "vvv", "xfd">;

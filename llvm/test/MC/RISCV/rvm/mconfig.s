@@ -15,17 +15,53 @@ msettype ra, a0
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
 # CHECK-UNKNOWN: f7 40 05 00 <unknown>
 
-msettypei ra, 0
-# CHECK-INST: msettypei ra, 0
+msettypei ra, e8
+# CHECK-INST: msettypei ra, e8
 # CHECK-ENCODING: [0xf7,0x40,0x00,0x02]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
 # CHECK-UNKNOWN: f7 40 00 02 <unknown>
 
-msettypehi ra, 0
-# CHECK-INST: msettypehi ra, 0
+msettypei ra, e16, int4, int8, int16
+# CHECK-INST: msettypei ra, e16, int4, int8, int16
+# CHECK-ENCODING: [0xf7,0xc0,0x1c,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 c0 1c 02 <unknown>
+
+msettypei ra, e32, int4, int8, int16, int32, int64
+# CHECK-INST: msettypei ra, e32, int4, int8, int16, int32, int64
+# CHECK-ENCODING: [0xf7,0x40,0x7d,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 40 7d 02 <unknown>
+
+msettypei ra, e64, int4, int8, int16, int32, int64, e3m4
+# CHECK-INST: msettypei ra, e64, int4, int8, int16, int32, int64, e3m4
+# CHECK-ENCODING: [0xf7,0xc0,0xfd,0x03]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 c0 fd 03 <unknown>
+
+msettypei ra, e8, int4, int8, int16, int32, int64, e4m3
+# CHECK-INST: msettypei ra, e8, int4, int8, int16, int32, int64, e4m3
+# CHECK-ENCODING: [0xf7,0x40,0xfc,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 40 fc 02 <unknown>
+
+msettypehi ra, bu
+# CHECK-INST: msettypehi ra, bu
 # CHECK-ENCODING: [0xf7,0x50,0x00,0x02]
 # CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
 # CHECK-UNKNOWN: f7 50 00 02 <unknown>
+
+msettypehi ra, ba, bf16, tf32
+# CHECK-INST: msettypehi ra, ba, bf16, tf32
+# CHECK-ENCODING: [0xf7,0x50,0x15,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 50 15 02 <unknown>
+
+msettypehi ra, ba, fp16, fp32, fp64
+# CHECK-INST: msettypehi ra, ba, fp16, fp32, fp64
+# CHECK-ENCODING: [0xf7,0xd0,0x1a,0x02]
+# CHECK-ERROR: instruction requires the following: 'Matrix' (Matrix Instructions)
+# CHECK-UNKNOWN: f7 d0 1a 02 <unknown>
 
 msetsew ra, 0
 # CHECK-INST: msetsew ra, 0

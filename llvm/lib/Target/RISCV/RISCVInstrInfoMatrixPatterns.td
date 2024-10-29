@@ -41,9 +41,13 @@ class PatImm<SDPatternOperator OpNode, RVInst Inst, Operand imm_type>
     : Pat<(XLenVT(OpNode imm_type:$imm)), (Inst imm_type:$imm)>;
 
 def : PatGpr<int_riscv_msettype, MSETTYPE>;
+def : PatImm<int_riscv_msettype, MSETTYPEI, uimm10>;
 def : PatGpr<int_riscv_msettilem, MSETTILEM>;
+def : PatImm<int_riscv_msettilem, MSETTILEMI, uimm10>;
 def : PatGpr<int_riscv_msettilen, MSETTILEN>;
+def : PatImm<int_riscv_msettilen, MSETTILENI, uimm10>;
 def : PatGpr<int_riscv_msettilek, MSETTILEK>;
+def : PatImm<int_riscv_msettilek, MSETTILEKI, uimm10>;
 
 def : PatImm<int_riscv_msettilemi, MSETTILEMI, uimm10>;
 def : PatImm<int_riscv_msettileni, MSETTILENI, uimm10>;
@@ -53,6 +57,11 @@ def : PatImm<int_riscv_msettypei, MSETTYPEI, uimm10>;
 
 def : PatImm<int_riscv_msettspi, MSETTSPI, uimm5>;
 def : PatGpr<int_riscv_msettsp, MSETTSP>;
+def : PatImm<int_riscv_msettsp, MSETTSPI, uimm5>;
+
+def : PatImm<int_riscv_msetdspi, MSETDSPI, uimm5>;
+def : PatGpr<int_riscv_msetdsp, MSETDSP>;
+def : PatImm<int_riscv_msetdsp, MSETDSPI, uimm5>;
 
 def : PatGprGpr<int_riscv_msetoutsh, MSETOUTSH>;
 def : PatGprGpr<int_riscv_msetinsh, MSETINSH>;
@@ -60,6 +69,17 @@ def : PatGprGpr<int_riscv_msetsk, MSETSK>;
 def : PatGpr<int_riscv_msetpadval, MSETPADVAL>;
 
 // 4.3. Load and Store Instructions
+// Pseudo Instr
+class PseudoMStore<TRReg RegClass, string Base>:
+      Pseudo<(outs),
+             (ins RegClass:$ts3, GPR:$rs1, GPR:$rs2),
+             []>, RISCVVPseudo {
+  let mayLoad = 0;
+  let mayStore = 1;
+  let hasSideEffects = 0;
+  let BaseInstr = !cast<Instruction>(Base);
+}
+
 class PatMLoad<SDPatternOperator OpNode, Instruction Inst, MatrixTypeInfo type>
     : Pat<(type.Matrix (OpNode BaseAddr:$rs1, GPR:$rs2)),
           (type.Matrix (Inst BaseAddr:$rs1, GPR:$rs2))>;
@@ -354,7 +374,7 @@ foreach MInfo = AllIntegerMatrixs in {
   def : PatMElet<int_riscv_mmaxu_mm,   MMAXU_MM,   MInfo, MInfo>;
   def : PatMElet<int_riscv_mmin_mm,    MMIN_MM,    MInfo, MInfo>;
   def : PatMElet<int_riscv_mmax_mm,    MMAX_MM,    MInfo, MInfo>;
-  def : PatMElet<int_riscv_msmulu_mm,  MSMUL_MM,   MInfo, MInfo>;
+  def : PatMElet<int_riscv_msmulu_mm,  MSMULU_MM,  MInfo, MInfo>;
   def : PatMElet<int_riscv_mmul_mm,    MMUL_MM,    MInfo, MInfo>;
   def : PatMElet<int_riscv_msmul_mm,   MSMUL_MM,   MInfo, MInfo>;
   def : PatMElet<int_riscv_mmulhu_mm,  MMULHU_MM,  MInfo, MInfo>;
@@ -492,7 +512,7 @@ foreach MInfo = AllFloatMatrixs in {
   def : PatMElet<!cast<SDPatternOperator>("int_riscv_mfmul_"#MInfo.alias#"_mm"),
                  !cast<Instruction>("MFMUL_"#MInfo.ALIAS#"_MM"),
                  MInfo, MInfo>;
-  def : PatMElet<int_riscv_mfdiv_mm, MFMUL_MM, MInfo, MInfo>;
+  def : PatMElet<int_riscv_mfdiv_mm, MFDIV_MM, MInfo, MInfo>;
   def : PatMElet<!cast<SDPatternOperator>("int_riscv_mfdiv_"#MInfo.alias#"_mm"),
                  !cast<Instruction>("MFDIV_"#MInfo.ALIAS#"_MM"),
                  MInfo, MInfo>;
@@ -926,4 +946,8 @@ def : PatMMV<int_riscv_mmvcc_v_m, !cast<Instruction>("MMVCCE"#mti.SEW#"_V_M"), m
 def : PatMMV<int_riscv_mmvac_m_v, !cast<Instruction>("MMVACE"#mti.SEW#"_M_V"), mti.Matrix, mti.Vector>;
 def : PatMMV<int_riscv_mmvbc_m_v, !cast<Instruction>("MMVBCE"#mti.SEW#"_M_V"), mti.Matrix, mti.Vector>;
 def : PatMMV<int_riscv_mmvcc_m_v, !cast<Instruction>("MMVCCE"#mti.SEW#"_M_V"), mti.Matrix, mti.Vector>;
+
+// date move, acc -> tr, tr -> acc
+def : PatMMV<int_riscv_mmv_a_t, !cast<Instruction>("MMVE"#mti.SEW#"_A_T"), mti.Matrix, mti.Matrix>;
+def : PatMMV<int_riscv_mmv_t_a, !cast<Instruction>("MMVE"#mti.SEW#"_T_A"), mti.Matrix, mti.Matrix>;
 }

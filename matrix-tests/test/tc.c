@@ -13,22 +13,21 @@ int8_t i8_buffer[200];
 
 int main() {
 	printf("hello riscv matrix clang ==================== \n");
-
   const size_t M = 8;
-  const size_t K = 8;
-  const stride = K * sizeof(int8_t);
+  const size_t N = 8;
+  const stride = N * sizeof(int8_t);
   SET_MBA0_I8();
   msettilem(M);
-  msettilek(K);
-  mint8_t ms = mla_m(ls_i8_src, stride);
+  msettilen(N);
+  mint8_t ms = mlc_m(ls_i8_src, stride);
 
   printf("test\n");
 
-  msa_m(ms, i8_buffer, stride);
+  msc_m(ms, i8_buffer, stride);
 
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 10; j++)
-      printf("%d  ", i8_buffer[i * 10 + j]);
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++)
+      printf("%d\t", i8_buffer[i * 8 + j]);
     printf("\n");
   }
 
