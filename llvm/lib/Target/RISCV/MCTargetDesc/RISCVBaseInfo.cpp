@@ -123,30 +123,12 @@ unsigned RISCVVType::encodeVTYPE(RISCVII::VLMUL VLMUL, unsigned SEW,
 
 // Encode MTYPE into the binary format used by the the MSETTYPE instruction which
 // is used by our MC layer representation.
-//
-// Bits | Name       | Description
-// -----+------------+------------------------------------------------
-// 10   | mint4      | Support 4-bit integer
-// 9    | mfp8       | Support 8-bit float point format
-// 8    | mtf32      | Support TensorFloat32 format
-// 7    | mbf16      | Support BFloat16 format
-// 6    | mfp64      | Support 64-bit float point
-// 5    | mba        | Matrix out of bound agnostic
-// 4:2  | msew[2:0]  | Selected element width (SEW) setting
-// 1:0  | mlmul[1:0] | Register group multiplier (LMUL) setting
-unsigned RISCVMType::encodeMTYPE(unsigned MLMUL, unsigned MSEW, bool MBA, unsigned FORMAT) {
+unsigned RISCVMType::encodeMTYPE(unsigned MSEW, unsigned FORMAT) {
   assert(isValidMSEW(MSEW) && "Invalid MSEW");
-  assert(isValidMLMUL(MLMUL) && "Invalid MLMUL");
 
-  unsigned MTypeI = Log2_32(MLMUL);
+  unsigned MTypeI = (Log2_32(MSEW) - 3) & 0x7;
+  MTypeI |= FORMAT << 3;
 
-  unsigned MSEWBits = Log2_32(MSEW) - 3;
-  MTypeI |= (MSEWBits & 0x7) << 2;
-
-  if (MBA)
-    MTypeI |= 1 << 5;
-
-  MTypeI |= FORMAT << 6;
   return MTypeI;
 }
 
@@ -193,30 +175,44 @@ void RISCVVType::printVType(unsigned VType, raw_ostream &OS) {
 
 void RISCVMType::printMType(unsigned MType, raw_ostream &OS) {
   OS << "e" << getMSEW(MType);
-  OS << ", m" << getMLMUL(MType);
-  if (isMatrixAgnostic(MType))
-    OS << ", ba";
-  else
-    OS << ", bu";
   unsigned mformat = getMFormat(MType);
   if (mformat & 0x1)
-    OS << ", fp64";
-  if (mformat & 0x2)
-    OS << ", bf16";
-  if (mformat & 0x4)
-    OS << ", tf32";
-  if (mformat & 0x8)
-    OS << ", fp8";
-  if (mformat & 0x10)
     OS << ", int4";
+  if (mformat & 0x2)
+    OS << ", int8";
+  if (mformat & 0x4)
+    OS << ", int16";
+  if (mformat & 0x8)
+    OS << ", int32";
+  if (mformat & 0x10)
+    OS << ", int64";
+  if ((mformat & 0x60) == 0x20)
+    OS << ", e4m3";
+  if ((mformat & 0x60) == 0x40)
+    OS << ", e5m2";
+  if ((mformat & 0x60) == 0x60)
+    OS << ", e3m4";
 }
 
-void RISCVMType::printLUML(unsigned LMUL, raw_ostream &OS) {
-  OS << "m" << getLMUL(LMUL);
-}
+void RISCVMType::printMTypeH(unsigned MTypeH, raw_ostream &OS) {
+  if (MTypeH & 0x20)
+    OS << "ba";
+  else
+    OS << "bu";
 
-void RISCVMType::printMField(unsigned MField, raw_ostream &OS) {
-  OS << "xxxxx";
+  if ((MTypeH & 0x3) == 0x1)
+    OS << ", fp16";
+  else if ((MTypeH & 0x3) == 0x2)
+    OS << ", bf16";
+
+  if ((MTypeH & 0xc) == 0x4)
+    OS << ", fp32";
+  else if ((MTypeH & 0xc) == 0x8)
+    OS << ", tf32";
+
+  if (MTypeH & 0x10)
+    OS << ", fp64";
+
 }
 
 } // namespace llvm

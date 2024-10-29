@@ -16,10 +16,10 @@
 // CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv128i8.i64(<vscale x 128 x i8> [[TMP5]], <vscale x 128 x i8>* [[TMP6]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_msmulsu_mm_uint8m1(const uint8_t *in1, const uint8_t *in2, uint8_t *out, size_t a) {
-    muint8_t m1 = mlc_m(in1, a);
+void test_msmulsu_mm_uint8m1(const int8_t *in1, const uint8_t *in2, int8_t *out, size_t a) {
+    mint8_t m1 = mlc_m(in1, a);
     muint8_t m2 = mlc_m(in2, a);
-    muint8_t mo = msmulsu_mm(m1, m2);
+    mint8_t mo = msmulsu_mm(m1, m2);
     mo = msmulsu_b_mm(mo, m2);
     msc_m(mo, out, a);
     return;
@@ -37,10 +37,10 @@ void test_msmulsu_mm_uint8m1(const uint8_t *in1, const uint8_t *in2, uint8_t *ou
 // CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv64i16.i64(<vscale x 64 x i16> [[TMP5]], <vscale x 64 x i16>* [[TMP6]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_msmulsu_mm_uint16m1(const uint16_t *in1, const uint16_t *in2, uint16_t *out, size_t a) {
-    muint16_t m1 = mlc_m(in1, a);
+void test_msmulsu_mm_uint16m1(const int16_t *in1, const uint16_t *in2, int16_t *out, size_t a) {
+    mint16_t m1 = mlc_m(in1, a);
     muint16_t m2 = mlc_m(in2, a);
-    muint16_t mo = msmulsu_mm(m1, m2);
+    mint16_t mo = msmulsu_mm(m1, m2);
     mo = msmulsu_h_mm(mo, m2);
     msc_m(mo, out, a);
     return;
@@ -58,10 +58,10 @@ void test_msmulsu_mm_uint16m1(const uint16_t *in1, const uint16_t *in2, uint16_t
 // CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv32i32.i64(<vscale x 32 x i32> [[TMP5]], <vscale x 32 x i32>* [[TMP6]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_msmulsu_mm_uint32m1(const uint32_t *in1, const uint32_t *in2, uint32_t *out, size_t a) {
-    muint32_t m1 = mlc_m(in1, a);
+void test_msmulsu_mm_uint32m1(const int32_t *in1, const uint32_t *in2, int32_t *out, size_t a) {
+    mint32_t m1 = mlc_m(in1, a);
     muint32_t m2 = mlc_m(in2, a);
-    muint32_t mo = msmulsu_mm(m1, m2);
+    mint32_t mo = msmulsu_mm(m1, m2);
     mo = msmulsu_w_mm(mo, m2);
     msc_m(mo, out, a);
     return;
@@ -79,10 +79,10 @@ void test_msmulsu_mm_uint32m1(const uint32_t *in1, const uint32_t *in2, uint32_t
 // CHECK-IR-RV64-NEXT:    call void @llvm.riscv.msc.m.nxv16i64.i64(<vscale x 16 x i64> [[TMP5]], <vscale x 16 x i64>* [[TMP6]], i64 [[A]]) #[[ATTR4]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
-void test_msmulsu_mm_uint64m1(const uint64_t *in1, const uint64_t *in2, uint64_t *out, size_t a) {
-    muint64_t m1 = mlc_m(in1, a);
+void test_msmulsu_mm_uint64m1(const int64_t *in1, const uint64_t *in2, int64_t *out, size_t a) {
+    mint64_t m1 = mlc_m(in1, a);
     muint64_t m2 = mlc_m(in2, a);
-    muint64_t mo = msmulsu_mm(m1, m2);
+    mint64_t mo = msmulsu_mm(m1, m2);
     mo = msmulsu_dw_mm(mo, m2);
     msc_m(mo, out, a);
     return;

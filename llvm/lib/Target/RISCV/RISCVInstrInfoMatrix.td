@@ -19,28 +19,16 @@ include "RISCVInstrFormatsMatrix.td"
 // Operand and SDNode transformation definitions.
 //===----------------------------------------------------------------------===//
 
-def LMULTypeIAsmOperand : AsmOperandClass {
-  let Name = "LMULTypeI";
-  let ParserMethod = "parseLMULTypeI";
-  let DiagnosticType = "InvalidLMULTypeI";
+def MTypeHIAsmOperand : AsmOperandClass {
+  let Name = "MTypeHI";
+  let ParserMethod = "parseMTypeHI";
+  let DiagnosticType = "InvalidMTypeHI";
 }
 
-def LMULTypeIOp : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<2>(Imm);}]> {
-  let ParserMatchClass = LMULTypeIAsmOperand;
-  let PrintMethod = "printLMULTypeI";
-  let DecoderMethod = "decodeUImmOperand<2>";
-}
-
-def MFieldIAsmOperand : AsmOperandClass {
-  let Name = "MFieldI";
-  let ParserMethod = "parseMFieldI";
-  let DiagnosticType = "InvalidMFieldI";
-}
-
-def MFieldIOp :  Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<5>(Imm);}]> {
-  let ParserMatchClass = MFieldIAsmOperand;
-  let PrintMethod = "printMFieldI";
-  let DecoderMethod = "decodeUImmOperand<5>";
+def MTypeHIOp : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<10>(Imm);}]> {
+  let ParserMatchClass = MTypeHIAsmOperand;
+  let PrintMethod = "printMTypeHI";
+  let DecoderMethod = "decodeUImmOperand<10>";
 }
 
 def MTypeIAsmOperand : AsmOperandClass {
@@ -49,10 +37,10 @@ def MTypeIAsmOperand : AsmOperandClass {
   let DiagnosticType = "InvalidMTypeI";
 }
 
-def MTypeIOp : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<13>(Imm);}]> {
+def MTypeIOp : Operand<XLenVT>, ImmLeaf<XLenVT, [{return isUInt<10>(Imm);}]> {
   let ParserMatchClass = MTypeIAsmOperand;
   let PrintMethod = "printMTypeI";
-  let DecoderMethod = "decodeUImmOperand<13>";
+  let DecoderMethod = "decodeUImmOperand<10>";
 }
 
 //===----------------------------------------------------------------------===//
@@ -69,9 +57,9 @@ class MSetRegClass<bits<6> funct6, bits<3> funct3, string opcodestr>
   let im = 0b0;
 }
 
-class MSetImmClass<bits<6> funct6, bits<3> funct3, string opcodestr>
+class MSetImmClass<bits<6> funct6, bits<3> funct3, string opcodestr, Operand imm = uimm10>
     : RVInstConfigImm<funct6, funct3,
-                      (outs GPR:$rd), (ins uimm10:$imm),
+                      (outs GPR:$rd), (ins imm:$imm),
                       opcodestr, "$rd, $imm"> {
   let im = 0b1;
 }
@@ -296,8 +284,8 @@ class MatrixTypeCvtClass<bits<6> funct6, bits<3> eew, bit fd, bits<3> f3,
 let Predicates = [HasStdExtMatrix] in {
 // Configuration Instructions
 def MSETTYPE   : MSetRegClass<0b000000, 0b100, "msettype">;
-def MSETTYPEI  : MSetImmClass<0b000000, 0b100, "msettypei">;
-def MSETTYPEHI : MSetImmClass<0b000000, 0b101, "msettypehi">;
+def MSETTYPEI  : MSetImmClass<0b000000, 0b100, "msettypei", MTypeIOp>;
+def MSETTYPEHI : MSetImmClass<0b000000, 0b101, "msettypehi", MTypeHIOp>;
 def MSETSEW    : MSetSewClass<0b00000, "msetsew">;
 def MSETINT4   : MSetSewClass<0b00001, "msetint4">;
 def MSETINT8   : MSetSewClass<0b00010, "msetint8">;

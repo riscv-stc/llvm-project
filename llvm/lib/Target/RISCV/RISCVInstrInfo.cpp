@@ -208,28 +208,20 @@ void RISCVInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     SubRegIdx = RISCV::sub_vrm1_0;
     NF = 8;
     LMul = 1;
-  } /*else if (RISCV::TRRRegClass.contains(DstReg, SrcReg)) {
+  } else if (RISCV::TRRRegClass.contains(DstReg, SrcReg)) {
     IsMatrix = true;
-    Opc = RISCV::PseudoMMAX_MM_I8M1;
-    LMul = 0;
-  } else if (RISCV::TRRM2RegClass.contains(DstReg, SrcReg)) {
+    Opc = RISCV::MMVE8_T_T;
+  } else if (RISCV::ACCRRegClass.contains(DstReg, SrcReg)) {
     IsMatrix = true;
-    Opc = RISCV::PseudoMMAX_MM_I8M2;
-    LMul = 1;
-  } else if (RISCV::TRRM4RegClass.contains(DstReg, SrcReg)) {
-    IsMatrix = true;
-    Opc = RISCV::PseudoMMAX_MM_I8M4;
-    LMul = 2;
-  }*/ else {
+    Opc = RISCV::MMVE8_A_A;
+  } else {
     llvm_unreachable("Impossible reg-to-reg copy");
   }
 
   if (IsScalableVector) {
     if (IsMatrix) {
       BuildMI(MBB, MBBI, DL, get(Opc), DstReg)
-          .addReg(SrcReg, getKillRegState(KillSrc))
-          .addReg(SrcReg, getKillRegState(KillSrc))
-          .addImm(LMul);
+          .addReg(SrcReg, getKillRegState(KillSrc));
     } else if (NF == 1) {
       BuildMI(MBB, MBBI, DL, get(Opc), DstReg)
           .addReg(SrcReg, getKillRegState(KillSrc));
@@ -275,11 +267,11 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
   unsigned Opcode;
   bool IsScalableVector = true;
   bool IsZvlsseg = true;
-  int Matrix = -1;    //  -1 no matrix, 0-m1, 1-m2, 2-m4
+  int Matrix = -1; //  -1 no matrix, 0-m1, 1-m2, 2-m4
 
   if (RISCV::GPRRegClass.hasSubClassEq(RC)) {
-    Opcode = TRI->getRegSizeInBits(RISCV::GPRRegClass) == 32 ?
-             RISCV::SW : RISCV::SD;
+    Opcode =
+        TRI->getRegSizeInBits(RISCV::GPRRegClass) == 32 ? RISCV::SW : RISCV::SD;
     IsScalableVector = false;
   } else if (RISCV::FPR16RegClass.hasSubClassEq(RC)) {
     Opcode = RISCV::FSH;
@@ -324,19 +316,15 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoVSPILL7_M1;
   else if (RISCV::VRN8M1RegClass.hasSubClassEq(RC))
     Opcode = RISCV::PseudoVSPILL8_M1;
-  /*else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
-    Opcode = RISCV::PseudoMSRE8_M_I8M1;
+  else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::MSTRE8_M;
     IsZvlsseg = false;
     Matrix = 0;
-  } else if (RISCV::TRRM2RegClass.hasSubClassEq(RC)) {
-    Opcode = RISCV::PseudoMSRE8_M_I8M2;
+  } else if (RISCV::ACCRRegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::MSACCE8_M;
     IsZvlsseg = false;
-    Matrix = 1;
-  } else if (RISCV::TRRM4RegClass.hasSubClassEq(RC)) {
-    Opcode = RISCV::PseudoMSRE8_M_I8M4;
-    IsZvlsseg = false;
-    Matrix = 2;
-  }*/ else
+    Matrix = 0;
+  } else
     llvm_unreachable("Can't store this register to stack slot");
 
   if (IsScalableVector) {
@@ -364,8 +352,7 @@ void RISCVInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
           .addReg(SrcReg, getKillRegState(IsKill))
           .addFrameIndex(FI)
           .addMemOperand(MMO)
-          .addReg(Stride, RegState::Kill) // stride
-          .addImm(Matrix);                // lmul
+          .addReg(Stride, RegState::Kill); // stride
     }
   } else {
     MachineMemOperand *MMO = MF->getMachineMemOperand(
@@ -400,8 +387,8 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
   int Matrix = -1;
 
   if (RISCV::GPRRegClass.hasSubClassEq(RC)) {
-    Opcode = TRI->getRegSizeInBits(RISCV::GPRRegClass) == 32 ?
-             RISCV::LW : RISCV::LD;
+    Opcode =
+        TRI->getRegSizeInBits(RISCV::GPRRegClass) == 32 ? RISCV::LW : RISCV::LD;
     IsScalableVector = false;
   } else if (RISCV::FPR16RegClass.hasSubClassEq(RC)) {
     Opcode = RISCV::FLH;
@@ -446,19 +433,15 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
     Opcode = RISCV::PseudoVRELOAD7_M1;
   else if (RISCV::VRN8M1RegClass.hasSubClassEq(RC))
     Opcode = RISCV::PseudoVRELOAD8_M1;
-  /*else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
-    Opcode = RISCV::PseudoMLRE8_M_I8M1;
+  else if (RISCV::TRRRegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::MLTRE8_M;
     IsZvlsseg = false;
     Matrix = 0;
-  } else if (RISCV::TRRM2RegClass.hasSubClassEq(RC)) {
-    Opcode = RISCV::PseudoMLRE8_M_I8M2;
+  } else if (RISCV::ACCRRegClass.hasSubClassEq(RC)) {
+    Opcode = RISCV::MLACCE8_M;
     IsZvlsseg = false;
-    Matrix = 1;
-  } else if (RISCV::TRRM4RegClass.hasSubClassEq(RC)) {
-    Opcode = RISCV::PseudoMLRE8_M_I8M4;
-    IsZvlsseg = false;
-    Matrix = 2;
-  } */else
+    Matrix = 0;
+  } else
     llvm_unreachable("Can't load this register from stack slot");
 
   if (IsScalableVector) {
@@ -485,8 +468,7 @@ void RISCVInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
       BuildMI(MBB, I, DL, get(Opcode), DstReg)
           .addFrameIndex(FI)
           .addMemOperand(MMO)
-          .addReg(Stride, RegState::Kill)
-          .addImm(Matrix);
+          .addReg(Stride, RegState::Kill);
     }
   } else {
     MachineMemOperand *MMO = MF->getMachineMemOperand(
@@ -1126,9 +1108,7 @@ bool RISCVInstrInfo::isMBBSafeToOutlineFrom(MachineBasicBlock &MBB,
 }
 
 // Enum values indicating how an outlined call should be constructed.
-enum MachineOutlinerConstructionID {
-  MachineOutlinerDefault
-};
+enum MachineOutlinerConstructionID { MachineOutlinerDefault };
 
 outliner::OutlinedFunction RISCVInstrInfo::getOutliningCandidateInfo(
     std::vector<outliner::Candidate> &RepeatedSequenceLocs) const {
@@ -1163,7 +1143,9 @@ outliner::OutlinedFunction RISCVInstrInfo::getOutliningCandidateInfo(
 
   // jr t0 = 4 bytes, 2 bytes if compressed instructions are enabled.
   unsigned FrameOverhead = 4;
-  if (RepeatedSequenceLocs[0].getMF()->getSubtarget()
+  if (RepeatedSequenceLocs[0]
+          .getMF()
+          ->getSubtarget()
           .getFeatureBits()[RISCV::FeatureStdExtC])
     FrameOverhead = 2;
 
@@ -1243,9 +1225,9 @@ void RISCVInstrInfo::buildOutlinedFrame(
 
   // Add in a return instruction to the end of the outlined frame.
   MBB.insert(MBB.end(), BuildMI(MF, DebugLoc(), get(RISCV::JALR))
-      .addReg(RISCV::X0, RegState::Define)
-      .addReg(RISCV::X5)
-      .addImm(0));
+                            .addReg(RISCV::X0, RegState::Define)
+                            .addReg(RISCV::X5)
+                            .addImm(0));
 }
 
 MachineBasicBlock::iterator RISCVInstrInfo::insertOutlinedCall(
@@ -1447,8 +1429,8 @@ MachineInstr *RISCVInstrInfo::commuteInstructionImpl(MachineInstr &MI,
     assert((OpIdx1 == 3 || OpIdx2 == 3) && "Unexpected opcode index");
     unsigned Opc;
     switch (MI.getOpcode()) {
-      default:
-        llvm_unreachable("Unexpected opcode");
+    default:
+      llvm_unreachable("Unexpected opcode");
       CASE_VFMA_CHANGE_OPCODE_SPLATS(FMACC, FMADD)
       CASE_VFMA_CHANGE_OPCODE_SPLATS(FMADD, FMACC)
       CASE_VFMA_CHANGE_OPCODE_SPLATS(FMSAC, FMSUB)
@@ -1486,8 +1468,8 @@ MachineInstr *RISCVInstrInfo::commuteInstructionImpl(MachineInstr &MI,
     if (OpIdx1 == 3 || OpIdx2 == 3) {
       unsigned Opc;
       switch (MI.getOpcode()) {
-        default:
-          llvm_unreachable("Unexpected opcode");
+      default:
+        llvm_unreachable("Unexpected opcode");
         CASE_VFMA_CHANGE_OPCODE_LMULS(FMADD, FMACC, VV)
         CASE_VFMA_CHANGE_OPCODE_LMULS(FMSUB, FMSAC, VV)
         CASE_VFMA_CHANGE_OPCODE_LMULS(FNMADD, FNMACC, VV)
@@ -1674,9 +1656,11 @@ static bool isRVMatrixLoadStore(unsigned Opcode) {
   // MLAE16_M ~ MLUFCE8_M
   // MSAE16_M ~ MSCTE8_M
   // MSFDAE16_M ~ MSFDCE8_M
-  if ((RISCV::MLAE16_M <= Opcode && Opcode <= RISCV::MLUFCE8_M) ||
+  if ((RISCV::MLACCE16_M <= Opcode && Opcode <= RISCV::MLUFCE8_M) ||
       (RISCV::MSAE16_M <= Opcode && Opcode <= RISCV::MSCTE8_M) ||
-      (RISCV::MSFDAE16_M <= Opcode && Opcode <= RISCV::MSFDCE8_M))
+      (RISCV::MSFDAE16_M <= Opcode && Opcode <= RISCV::MSFDCE8_M) ||
+      (RISCV::MSTRE16_M <= Opcode && Opcode <= RISCV::MSTRE8_M) ||
+      (RISCV::MSACCE16_M <= Opcode && Opcode <= RISCV::MSACCE8_M))
     return true;
 
   return false;

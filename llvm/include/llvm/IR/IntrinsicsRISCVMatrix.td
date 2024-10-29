@@ -118,6 +118,9 @@ let TargetPrefix = "riscv" in {
   def int_riscv_msfdc_m : MStoreIntrinsic;
 
   // Data Move Instructions
+  def int_riscv_mmv_a_t : MBinaryMMIIntrinsic;
+  def int_riscv_mmv_t_a : MBinaryMMIIntrinsic;
+
   def int_riscv_mmv_x_t  : MBinaryIMIIntrinsic;
   def int_riscv_mmv_t_x  : MMoveMMIIIntrinsic;
   def int_riscv_mmv_x_a  : MBinaryIMIIntrinsic;

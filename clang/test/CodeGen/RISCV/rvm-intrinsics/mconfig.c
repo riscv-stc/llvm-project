@@ -12,15 +12,25 @@
 // CHECK-IR-RV64-NEXT:    [[TMP1:%.*]] = call i64 @llvm.riscv.msettilem.i64(i64 [[A]]) #[[ATTR1]]
 // CHECK-IR-RV64-NEXT:    [[TMP2:%.*]] = call i64 @llvm.riscv.msettilen.i64(i64 [[A]]) #[[ATTR1]]
 // CHECK-IR-RV64-NEXT:    [[TMP3:%.*]] = call i64 @llvm.riscv.msettilek.i64(i64 [[A]]) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call i64 @llvm.riscv.msettypei.i64(i64 64) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = call i64 @llvm.riscv.msettypehi.i64(i64 64) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call i64 @llvm.riscv.msettilemi.i64(i64 32) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = call i64 @llvm.riscv.msettileni.i64(i64 64) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP8:%.*]] = call i64 @llvm.riscv.msettileki.i64(i64 128) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP9:%.*]] = call i64 @llvm.riscv.msetoutsh.i64(i64 [[A]], i64 [[B:%.*]]) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP10:%.*]] = call i64 @llvm.riscv.msetinsh.i64(i64 [[A]], i64 [[B]]) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP11:%.*]] = call i64 @llvm.riscv.msetsk.i64(i64 [[A]], i64 [[B]]) #[[ATTR1]]
-// CHECK-IR-RV64-NEXT:    [[TMP12:%.*]] = call i64 @llvm.riscv.msetpadval.i64(i64 [[A]]) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP4:%.*]] = call i64 @llvm.riscv.msettype.i64(i64 64) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP5:%.*]] = call i64 @llvm.riscv.msettypei.i64(i64 64) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP6:%.*]] = call i64 @llvm.riscv.msettypehi.i64(i64 53) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP7:%.*]] = call i64 @llvm.riscv.msettilem.i64(i64 32) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP8:%.*]] = call i64 @llvm.riscv.msettilemi.i64(i64 32) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP9:%.*]] = call i64 @llvm.riscv.msettilen.i64(i64 64) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP10:%.*]] = call i64 @llvm.riscv.msettileni.i64(i64 64) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP11:%.*]] = call i64 @llvm.riscv.msettilek.i64(i64 128) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP12:%.*]] = call i64 @llvm.riscv.msettileki.i64(i64 128) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP13:%.*]] = call i64 @llvm.riscv.msettspi.i64(i64 6) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP14:%.*]] = call i64 @llvm.riscv.msettsp.i64(i64 [[A]]) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP15:%.*]] = call i64 @llvm.riscv.msettsp.i64(i64 6) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP16:%.*]] = call i64 @llvm.riscv.msetdspi.i64(i64 6) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP17:%.*]] = call i64 @llvm.riscv.msetdsp.i64(i64 [[A]]) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP18:%.*]] = call i64 @llvm.riscv.msetdsp.i64(i64 6) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP19:%.*]] = call i64 @llvm.riscv.msetoutsh.i64(i64 [[A]], i64 [[B:%.*]]) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP20:%.*]] = call i64 @llvm.riscv.msetinsh.i64(i64 [[A]], i64 [[B]]) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP21:%.*]] = call i64 @llvm.riscv.msetsk.i64(i64 [[A]], i64 [[B]]) #[[ATTR1]]
+// CHECK-IR-RV64-NEXT:    [[TMP22:%.*]] = call i64 @llvm.riscv.msetpadval.i64(i64 [[A]]) #[[ATTR1]]
 // CHECK-IR-RV64-NEXT:    ret void
 //
 void mconfig(size_t a, size_t b) {
@@ -28,11 +38,23 @@ void mconfig(size_t a, size_t b) {
     msettilem(a);
     msettilen(a);
     msettilek(a);
+    msettype(64);
     msettypei(64);
-    msettypehi(64);
+    msettypehi(53);
+    msettilem(32);
     msettilemi(32);
+    msettilen(64);
     msettileni(64);
+    msettilek(128);
     msettileki(128);
+
+    msettspi(6);
+    msettsp(a);
+    msettsp(6);
+
+    msetdspi(6);
+    msetdsp(a);
+    msetdsp(6);
 
     msetoutsh(a, b);
     msetinsh(a, b);

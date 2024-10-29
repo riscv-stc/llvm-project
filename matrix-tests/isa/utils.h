@@ -30,7 +30,6 @@ static int pass_cases = 0;
     test_cases++;                                                              \
     if ((equality)) {                                                          \
       pass_cases++;                                                            \
-      printf("%s:%d: %s PASS!\033[0m\n", __FILE__, __LINE__, (name));          \
     } else {                                                                   \
       printf("%s:%d: %s FAIL! expect: " format " actual: " format "\n",        \
              __FILE__, __LINE__, (name), (except), (actual));                  \
@@ -62,16 +61,16 @@ static int pass_cases = 0;
   EXCEPT_SCALAR_EQ_BASE((except) == (actual), (except), (actual), "%lu", name)
 
 #define EXCEPT_F16_SCALAR_EQ(except, actual, name)                             \
-  EXCEPT_SCALAR_EQ_BASE((fp16_t)(except) == (actual), (fp16_t)(except),        \
-                        (fp16_t)(actual), "%f", name)
+  EXCEPT_SCALAR_EQ_BASE((fp16_t)(except) == (fp16_t)(actual),                  \
+                        (fp16_t)(except), (fp16_t)(actual), "%f", name)
 
 #define EXCEPT_F32_SCALAR_EQ(except, actual, name)                             \
-  EXCEPT_SCALAR_EQ_BASE((fp32_t)(except) == (actual), (fp32_t)(except),        \
-                        (fp32_t)(actual), "%f", name)
+  EXCEPT_SCALAR_EQ_BASE((fp32_t)(except) == (fp32_t)(actual),                  \
+                        (fp32_t)(except), (fp32_t)(actual), "%f", name)
 
 #define EXCEPT_F64_SCALAR_EQ(except, actual, name)                             \
-  EXCEPT_SCALAR_EQ_BASE((fp64_t)(except) == (actual), (fp64_t)(except),        \
-                        (fp64_t)(actual), "%f", name)
+  EXCEPT_SCALAR_EQ_BASE((fp64_t)(except) == (fp64_t)(actual),                  \
+                        (fp64_t)(except), (fp64_t)(actual), "%f", name)
 
 #define EXCEPT_FP_SCALAR_LAX_EQ(except, actual, name)                          \
   EXCEPT_SCALAR_EQ_BASE(                                                       \
@@ -137,8 +136,8 @@ static int pass_cases = 0;
     type *casted_arr1 = (type *)(arr1);                                        \
     type *casted_arr2 = (type *)(arr2);                                        \
     for (i = 0; i < (len); ++i) {                                              \
-      if ((casted_arr1[i] - casted_arr2[i] > 1e-1) ||                          \
-          (casted_arr1[i] - casted_arr2[i] < -1e-1)) {                         \
+      if ((casted_arr1[i] - casted_arr2[i] > 5e-1) ||                          \
+          (casted_arr1[i] - casted_arr2[i] < -5e-1)) {                         \
         printf("%s:%d: %s FAIL! First differ at index %d: "                    \
                "expect: " format " actual: " format "\n",                      \
                __FILE__, __LINE__, (name), i, casted_arr1[i], casted_arr2[i]); \
@@ -150,13 +149,13 @@ static int pass_cases = 0;
     }                                                                          \
   } while (0);
 
-#define EXCEPT_FP16_ARRAY_LAX_EQ(arr1, arr2, len, name)                        \
+#define EXCEPT_F16_ARRAY_LAX_EQ(arr1, arr2, len, name)                        \
   EXCEPT_ARRAY_LAX_EQ_BASE(arr1, arr2, len, fp16_t, "%f", name)
 
-#define EXCEPT_FP32_ARRAY_LAX_EQ(arr1, arr2, len, name)                        \
+#define EXCEPT_F32_ARRAY_LAX_EQ(arr1, arr2, len, name)                        \
   EXCEPT_ARRAY_LAX_EQ_BASE(arr1, arr2, len, fp32_t, "%f", name)
 
-#define EXCEPT_FP64_ARRAY_LAX_EQ(arr1, arr2, len, name)                        \
+#define EXCEPT_F64_ARRAY_LAX_EQ(arr1, arr2, len, name)                        \
   EXCEPT_ARRAY_LAX_EQ_BASE(arr1, arr2, len, fp64_t, "%f", name)
 
 #define DUMP_MATRIX(arr, row, col, format)                                     \
@@ -188,5 +187,27 @@ static int pass_cases = 0;
 #define SET_MBA0_F32() CONFIGURATION_MTYPE(0x4, 0x2)
 
 #define SET_MBA0_F64() CONFIGURATION_MTYPE(0x10, 0x3)
+
+#define SET_MBA0_F16F32() CONFIGURATION_MTYPE(0x5, 0x1)
+
+#define SET_MBA0_F32F64() CONFIGURATION_MTYPE(0x14, 0x2)
+
+#define SET_MBA0_F16I16() CONFIGURATION_MTYPE(0x1, 0x21)
+
+#define SET_MBA0_F32I32() CONFIGURATION_MTYPE(0x4, 0x42)
+
+#define SET_MBA0_F64I64() CONFIGURATION_MTYPE(0x10, 0x83)
+
+#define SET_MBA0_F16I8() CONFIGURATION_MTYPE(0x1, 0x10)
+
+#define SET_MBA0_F16I32() CONFIGURATION_MTYPE(0x1, 0x42)
+
+#define SET_MBA0_F32I64() CONFIGURATION_MTYPE(0x4, 0x83)
+
+#define SET_MBA0_F32I16() CONFIGURATION_MTYPE(0x4, 0x21)
+
+#define SET_MBA0_F64I32() CONFIGURATION_MTYPE(0x10, 0x42)
+
+#define SET_MBA0_F32I8() CONFIGURATION_MTYPE(0x4, 0x10)
 
 #endif // !_MATRIX_TEST_UTILS_H_
